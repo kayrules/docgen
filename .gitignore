@@ -5,3 +5,6 @@ backups/*/**
 /node_modules
 /cache
 /lib
+/backups
+/repositories
+/documentations
