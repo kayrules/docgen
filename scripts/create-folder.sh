@@ -46,15 +46,13 @@ fi
 
 # Get project directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$SCRIPT_DIR/../projects/$PROJECT_SLUG"
+DOCS_DIR="$SCRIPT_DIR/../documentations/$PROJECT_SLUG"
 
 # Check if project exists
-if [ ! -d "$PROJECT_ROOT" ]; then
-    echo "Error: Project '$PROJECT_SLUG' not found at $PROJECT_ROOT"
+if [ ! -d "$DOCS_DIR" ]; then
+    echo "Error: Project '$PROJECT_SLUG' not found at $DOCS_DIR"
     exit 1
 fi
-
-DOCS_DIR="$PROJECT_ROOT/docs"
 
 # Generate slug from title
 FOLDER_SLUG=$(generate_slug "$FOLDER_TITLE")

@@ -53,13 +53,19 @@ generate_slug() {
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$SCRIPT_DIR/.."
 
+# Source environment variables if .env exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    source "$PROJECT_ROOT/.env"
+fi
+
 # Generate project slug
 PROJECT_SLUG=$(generate_slug "$PROJECT_TITLE")
-WORKSPACE_DIR="$PROJECT_ROOT/projects/$PROJECT_SLUG"
+DOCS_DIR="$PROJECT_ROOT/documentations/$PROJECT_SLUG"
+REPO_DIR="$PROJECT_ROOT/repositories/$PROJECT_SLUG"
 BACKUPS_DIR="$PROJECT_ROOT/backups"
 
 # Handle existing project
-if [ -d "$WORKSPACE_DIR" ]; then
+if [ -d "$REPO_DIR" ] || [ -d "$DOCS_DIR" ]; then
     if [ "$FORCE" = true ]; then
         # Create backup with timestamp
         TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -67,11 +73,29 @@ if [ -d "$WORKSPACE_DIR" ]; then
         BACKUP_PATH="$BACKUPS_DIR/$BACKUP_NAME"
         
         echo "Project workspace exists. Creating backup..."
-        mkdir -p "$BACKUPS_DIR"
-        mv "$WORKSPACE_DIR" "$BACKUP_PATH"
+        mkdir -p "$BACKUP_PATH"
+        
+        # Move repository folder if it exists
+        if [ -d "$REPO_DIR" ]; then
+            mv "$REPO_DIR" "$BACKUP_PATH/repository"
+            echo "Repository backed up to: $BACKUP_PATH/repository"
+        fi
+        
+        # Move documentation folder if it exists
+        if [ -d "$DOCS_DIR" ]; then
+            mv "$DOCS_DIR" "$BACKUP_PATH/documentation"
+            echo "Documentation backed up to: $BACKUP_PATH/documentation"
+        fi
+        
         echo "Backup created at: $BACKUP_PATH"
     else
-        echo "Error: Project workspace already exists at $WORKSPACE_DIR"
+        echo "Error: Project workspace already exists"
+        if [ -d "$REPO_DIR" ]; then
+            echo "Repository exists at: $REPO_DIR"
+        fi
+        if [ -d "$DOCS_DIR" ]; then
+            echo "Documentation exists at: $DOCS_DIR"
+        fi
         echo "Use --force or -f flag to backup and regenerate"
         exit 1
     fi
@@ -80,15 +104,15 @@ fi
 # Create workspace directory structure
 echo "Creating project workspace: $PROJECT_TITLE"
 echo "Project slug: $PROJECT_SLUG"
-echo "Workspace directory: $WORKSPACE_DIR"
+echo "Repository directory: $REPO_DIR"
+echo "Documentation directory: $DOCS_DIR"
 
-mkdir -p "$WORKSPACE_DIR"
-mkdir -p "$WORKSPACE_DIR/repository"
-mkdir -p "$WORKSPACE_DIR/docs"
+mkdir -p "$REPO_DIR"
+mkdir -p "$DOCS_DIR"
 
 # Clone repository into repository folder
 echo "Cloning repository into workspace..."
-cd "$WORKSPACE_DIR/repository"
+cd "$REPO_DIR"
 git clone --branch "$BRANCH_NAME" "$REPOSITORY_URL" .
 
 # Get git username for creator field
@@ -102,7 +126,7 @@ fi
 
 # Create info.json
 echo "Creating info.json..."
-cat > "$WORKSPACE_DIR/info.json" <<EOF
+cat > "$REPO_DIR/info.json" <<EOF
 {
   "title": "$PROJECT_TITLE",
   "description": "$PROJECT_DESCRIPTION",
@@ -113,8 +137,15 @@ cat > "$WORKSPACE_DIR/info.json" <<EOF
 }
 EOF
 
+# Initialize with Claude Code
+if [ "$USE_KIMI" = "true" ] && [ -n "$ANTHROPIC_KEY" ] && [ -n "$ANTHROPIC_URL" ]; then 
+    ANTHROPIC_AUTH_TOKEN=$ANTHROPIC_KEY ANTHROPIC_BASE_URL=$ANTHROPIC_URL claude --dangerously-skip-permissions "/init"
+else
+    claude --dangerously-skip-permissions "/init"
+fi
+
 echo " Project workspace initialized successfully!"
-echo "Location: $WORKSPACE_DIR"
+echo "Location: $REPO_DIR"
 echo ""
 echo "Next steps:"
 echo "1. Review and update the README.md file"
