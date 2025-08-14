@@ -51,7 +51,7 @@ generate_slug() {
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$SCRIPT_DIR/.."
+PROJECT_ROOT="$SCRIPT_DIR/../.."
 
 # Source environment variables if .env exists
 if [ -f "$PROJECT_ROOT/.env" ]; then
@@ -60,9 +60,10 @@ fi
 
 # Generate project slug
 PROJECT_SLUG=$(generate_slug "$PROJECT_TITLE")
-DOCS_DIR="$PROJECT_ROOT/documentations/$PROJECT_SLUG"
+DOCS_DIR="$PROJECT_ROOT/docupilot/$PROJECT_SLUG"
 REPO_DIR="$PROJECT_ROOT/repositories/$PROJECT_SLUG"
 BACKUPS_DIR="$PROJECT_ROOT/backups"
+TEMPLATES_DIR="$PROJECT_ROOT/templates"
 
 # Handle existing project
 if [ -d "$REPO_DIR" ] || [ -d "$DOCS_DIR" ]; then
@@ -77,8 +78,8 @@ if [ -d "$REPO_DIR" ] || [ -d "$DOCS_DIR" ]; then
         
         # Move repository folder if it exists
         if [ -d "$REPO_DIR" ]; then
-            mv "$REPO_DIR" "$BACKUP_PATH/repository"
-            echo "Repository backed up to: $BACKUP_PATH/repository"
+            rm -rf "$REPO_DIR"
+            echo "Delete old repository"
         fi
         
         # Move documentation folder if it exists
@@ -124,27 +125,26 @@ else
     CREATOR="$(whoami)"
 fi
 
-# Create info.json
-echo "Creating info.json..."
-cat > "$REPO_DIR/info.json" <<EOF
-{
-  "title": "$PROJECT_TITLE",
-  "description": "$PROJECT_DESCRIPTION",
-  "repository": "$REPOSITORY_URL",
-  "branch": "$BRANCH_NAME",
-  "creator": "$CREATOR",
-  "created": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-}
-EOF
-
-# Initialize with Claude Code
-if [ "$USE_KIMI" = "true" ] && [ -n "$ANTHROPIC_KEY" ] && [ -n "$ANTHROPIC_URL" ]; then 
-    ANTHROPIC_AUTH_TOKEN=$ANTHROPIC_KEY ANTHROPIC_BASE_URL=$ANTHROPIC_URL claude --dangerously-skip-permissions "/init"
+# Copy templates
+echo "Copying templates..."
+if [ -d "$TEMPLATES_DIR" ] && [ "$(ls -A $TEMPLATES_DIR)" ]; then
+    cp -r "$TEMPLATES_DIR"/* "$DOCS_DIR"
+    echo "Templates copied successfully"
 else
-    claude --dangerously-skip-permissions "/init"
+    echo "No templates found or templates directory empty"
 fi
+# cat > "$REPO_DIR/info.json" <<EOF
+# {
+#   "title": "$PROJECT_TITLE",
+#   "description": "$PROJECT_DESCRIPTION",
+#   "repository": "$REPOSITORY_URL",
+#   "branch": "$BRANCH_NAME",
+#   "creator": "$CREATOR",
+#   "created": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+# }
+# EOF
 
-echo " Project workspace initialized successfully!"
+echo "Project workspace initialized successfully!"
 echo "Location: $REPO_DIR"
 echo ""
 echo "Next steps:"

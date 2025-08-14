@@ -1,0 +1,8 @@
+{
+  "label": "Extra",
+  "position": 1,
+  "link": {
+    "type": "generated-index",
+    "description": "Sample Extra Folder."
+  }
+}

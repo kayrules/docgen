@@ -1,0 +1,24 @@
+{
+  "name": "docupilot-backend",
+  "version": "1.0.0",
+  "description": "Backend API for DocuPilot project management",
+  "main": "server.js",
+  "scripts": {
+    "start": "bun run server.js",
+    "dev": "bun --hot server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["docusaurus", "documentation", "api"],
+  "author": "DocuPilot",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "dotenv": "^16.3.1",
+    "body-parser": "^1.20.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
