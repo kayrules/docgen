@@ -77,18 +77,7 @@ const config = {
     ]
   ],
 
-  plugins: [
-    [
-      '@docusaurus/plugin-content-docs',
-      {
-        id: 'ubeda-afb',
-        path: 'ubeda-afb',
-        routeBasePath: 'ubeda-afb',
-        sidebarPath: './ubeda-afb/sidebars.js',
-        editUrl: 'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-      },
-    ],
-  ],
+  plugins: [],
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -113,13 +102,6 @@ const config = {
             label: 'Projects',
             position: 'left',
             items: [
-              {
-                type: 'docSidebar',
-                sidebarId: 'ubedaAfbSidebar',
-                label: 'UBEDA AFB',
-                docsPluginId: 'ubeda-afb',
-              },
-            
             
             
             ]

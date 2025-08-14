@@ -120,8 +120,6 @@ const config = {
                 docsPluginId: 'ubeda-afb',
               },
             
-            
-            
             ]
           },
           { to: '/blog', label: 'Blog', position: 'left' },
