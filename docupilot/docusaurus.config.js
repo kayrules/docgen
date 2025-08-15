@@ -78,20 +78,20 @@ const config = {
   ],
 
   plugins: [[
+      '@docusaurus/plugin-content-docs',
+      {
+        id: 'ubeda-afb',
+        path: 'ubeda-afb',
+        routeBasePath: 'ubeda-afb',
+        sidebarPath: './ubeda-afb/sidebars.js',
+      },
+    ], [
     '@docusaurus/plugin-content-docs',
     {
       id: 'tesla-rhbme',
       path: 'tesla-rhbme',
       routeBasePath: 'tesla-rhbme',
       sidebarPath: './tesla-rhbme/sidebars.js',
-    },
-  ], [
-    '@docusaurus/plugin-content-docs',
-    {
-      id: 'ubeda-afb',
-      path: 'ubeda-afb',
-      routeBasePath: 'ubeda-afb',
-      sidebarPath: './ubeda-afb/sidebars.js',
     },
   ]],
 
@@ -118,20 +118,17 @@ const config = {
             type: 'dropdown',
             label: 'Projects',
             position: 'left',
-            items: [
-              {
-                type: 'docSidebar',
-                sidebarId: 'teslaRhbmeSidebar',
-                label: 'Tesla RHBme',
-                docsPluginId: 'tesla-rhbme',
-              },
-              {
-                type: 'docSidebar',
-                sidebarId: 'ubedaAfbSidebar',
-                label: 'UBEDA AFB',
-                docsPluginId: 'ubeda-afb',
-              }
-            ]
+            items: [{
+    type: 'docSidebar',
+    sidebarId: 'ubedaAfbSidebar',
+    label: 'UBEDA AFB',
+    docsPluginId: 'ubeda-afb',
+  }, {
+    type: 'docSidebar',
+    sidebarId: 'teslaRhbmeSidebar',
+    label: 'Tesla RHBme',
+    docsPluginId: 'tesla-rhbme',
+  }]
           },
           {
             to: '/projects',

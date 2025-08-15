@@ -1,8 +1,9 @@
 ---
 sidebar_position: 1
+slug: /
 ---
 
-# Project Documentation
+# Introduction
 
 Welcome to the project documentation.
 

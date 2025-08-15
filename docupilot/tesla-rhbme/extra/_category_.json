@@ -1,8 +1,8 @@
 {
-  "label": "Extra",
+  "label": "Sub Topics",
   "position": 2,
   "link": {
     "type": "generated-index",
-    "description": "Sample Extra Folder."
+    "description": "Sample Sub-topics Folder."
   }
 }

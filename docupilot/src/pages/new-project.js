@@ -143,7 +143,7 @@ export default function NewProject() {
                 value={formData.repositoryUrl}
                 onChange={handleInputChange}
                 required
-                placeholder="https://github.com/username/repository, git@github.com:username/repository.git, or ssh://git@host/path/repo.git"
+                placeholder="https://github.com/username/repository.git or git@github.com:username/repository.git"
                 style={{
                   width: '100%',
                   padding: '0.5rem',

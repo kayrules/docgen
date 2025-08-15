@@ -125,10 +125,34 @@ else
     CREATOR="$(whoami)"
 fi
 
-# Copy templates
+# Generate camelCase sidebar ID from project slug (consistent with backend JS)
+# Convert kebab-case to camelCase: "ubeda-afb" → "ubedaAfbSidebar"
+SIDEBAR_ID=$(echo "$PROJECT_SLUG" | awk -F'-' '{
+  result = $1;
+  for(i=2; i<=NF; i++) {
+    result = result toupper(substr($i,1,1)) substr($i,2);
+  }
+  print result "Sidebar";
+}')
+
+# Copy templates and replace placeholders
 echo "Copying templates..."
 if [ -d "$TEMPLATES_DIR" ] && [ "$(ls -A $TEMPLATES_DIR)" ]; then
-    cp -r "$TEMPLATES_DIR"/* "$DOCS_DIR"
+    for file in "$TEMPLATES_DIR"/*; do
+        filename=$(basename "$file")
+        if [ -d "$file" ]; then
+            cp -r "$file" "$DOCS_DIR/"
+        elif [ "$filename" = "sidebars.js" ]; then
+            # Special handling for sidebars.js - replace placeholders
+            sed -e "s/__SIDEBAR_ID__/${SIDEBAR_ID}/g" \
+                -e "s/__PROJECT_TITLE__/${PROJECT_TITLE}/g" \
+                -e "s/__PROJECT_DESCRIPTION__/${PROJECT_DESCRIPTION}/g" \
+                "$file" > "$DOCS_DIR/$filename"
+            echo "Processed sidebars.js with placeholders replaced"
+        else
+            cp "$file" "$DOCS_DIR/"
+        fi
+    done
     echo "Templates copied successfully"
 else
     echo "No templates found or templates directory empty"

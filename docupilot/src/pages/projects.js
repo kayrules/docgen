@@ -8,15 +8,30 @@ export default function Projects() {
   const [deletingProject, setDeletingProject] = useState(null);
   const [message, setMessage] = useState('');
 
-  // Load projects on component mount
+  // Load projects on component mount and when page becomes visible
   useEffect(() => {
     loadProjects();
+    
+    // Refresh when user returns to the tab/page
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadProjects();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const loadProjects = async () => {
     try {
       setLoadingProjects(true);
-      const response = await fetch('http://localhost:3001/api/projects', {
+      // Add timestamp to prevent caching
+      const timestamp = new Date().getTime();
+      const response = await fetch(`http://localhost:3001/api/projects?_t=${timestamp}`, {
         cache: 'no-cache',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -48,13 +63,13 @@ export default function Projects() {
       const result = await response.json();
 
       if (result.success) {
-        setMessage('✅ Project deleted successfully!');
-        // Add a small delay to ensure backend processing is complete
+        setMessage('✅ Project deleted successfully! Refreshing list...');
+        // Add a longer delay to ensure backend processing is complete
         setTimeout(() => {
           loadProjects(); // Reload the project list
-        }, 500);
-        // Clear message after 3 seconds
-        setTimeout(() => setMessage(''), 3000);
+        }, 1500);
+        // Clear message after 5 seconds
+        setTimeout(() => setMessage(''), 5000);
       } else {
         setMessage(`❌ Error deleting project: ${result.message}`);
       }
@@ -70,16 +85,26 @@ export default function Projects() {
     <Layout
       title="Projects"
       description="Manage your project documentation">
-      <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <Heading as="h1">Projects</Heading>
-          <a
-            href="/new-project"
-            className="button button--primary"
-            style={{ textDecoration: 'none' }}
-          >
-            + Add Project
-          </a>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => loadProjects()}
+              className="button button--secondary"
+              disabled={loadingProjects}
+              style={{ opacity: loadingProjects ? 0.6 : 1 }}
+            >
+              {loadingProjects ? 'Refreshing...' : '🔄 Refresh'}
+            </button>
+            <a
+              href="/new-project"
+              className="button button--primary"
+              style={{ textDecoration: 'none' }}
+            >
+              + Add Project
+            </a>
+          </div>
         </div>
 
         {message && (
@@ -116,9 +141,6 @@ export default function Projects() {
           </div>
         ) : (
           <div style={{
-            backgroundColor: 'white',
-            border: '1px solid var(--ifm-color-emphasis-300)',
-            borderRadius: '8px',
             overflow: 'hidden',
             width: '100%'
           }}>
@@ -197,8 +219,11 @@ export default function Projects() {
                       padding: '12px 16px',
                       fontSize: '13px',
                       color: '#6c757d',
-                      wordBreak: 'break-all',
-                      maxWidth: '300px'
+                      wordBreak: 'break-word',
+                      maxWidth: '500px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
                     }}>
                       {project.repositoryUrl || '-'}
                     </td>
