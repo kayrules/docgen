@@ -16,7 +16,14 @@ export default function Projects() {
   const loadProjects = async () => {
     try {
       setLoadingProjects(true);
-      const response = await fetch('http://localhost:3001/api/projects');
+      const response = await fetch('http://localhost:3001/api/projects', {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       const result = await response.json();
       if (result.success) {
         setProjects(result.projects);
@@ -66,6 +73,13 @@ export default function Projects() {
       <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <Heading as="h1">Projects</Heading>
+          <a
+            href="/new-project"
+            className="button button--primary"
+            style={{ textDecoration: 'none' }}
+          >
+            + Add Project
+          </a>
         </div>
 
         {message && (

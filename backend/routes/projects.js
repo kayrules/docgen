@@ -27,113 +27,141 @@ async function updateDocusaurusConfig(projectTitle) {
   const projectSlug = generateSlug(projectTitle);
   const sidebarId = generateSidebarId(projectSlug);
   const configPath = path.join(__dirname, '../../docupilot/docusaurus.config.js');
-  
+
   // Create backup before making changes
   const backupPath = path.join(__dirname, '../../docupilot/docusaurus.config.backup.js');
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const timestampedBackupPath = path.join(__dirname, `../../docupilot/docusaurus.config.${timestamp}.backup.js`);
-  
+
   // Check if config file exists
   if (!fs.existsSync(configPath)) {
     throw new Error(`Config file not found at: ${configPath}`);
   }
-  
+
   // Read current config
   const configContent = fs.readFileSync(configPath, 'utf8');
-  
+
   // Create backup with timestamp
   fs.writeFileSync(timestampedBackupPath, configContent, 'utf8');
   console.log(`Config backup created: ${timestampedBackupPath}`);
-  
+
   // Check if plugin already exists
   if (configContent.includes(`id: '${projectSlug}'`)) {
     console.log(`Plugin for ${projectSlug} already exists in config`);
     return;
   }
-  
+
   // Add plugin configuration
-  const pluginConfig = `    [
-      '@docusaurus/plugin-content-docs',
-      {
-        id: '${projectSlug}',
-        path: '${projectSlug}',
-        routeBasePath: '${projectSlug}',
-        sidebarPath: './${projectSlug}/sidebars.js',
-        editUrl: 'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-      },
-    ],`;
-  
+  const pluginConfig = `[
+    '@docusaurus/plugin-content-docs',
+    {
+      id: '${projectSlug}',
+      path: '${projectSlug}',
+      routeBasePath: '${projectSlug}',
+      sidebarPath: './${projectSlug}/sidebars.js',
+    },
+  ]`;
+
   // Add sidebar item to navbar
-  const sidebarItem = `              {
-                type: 'docSidebar',
-                sidebarId: '${sidebarId}',
-                label: '${projectTitle}',
-                docsPluginId: '${projectSlug}',
-              },`;
-  
+  const sidebarItem = `{
+    type: 'docSidebar',
+    sidebarId: '${sidebarId}',
+    label: '${projectTitle}',
+    docsPluginId: '${projectSlug}',
+  }`;
+
   let updatedConfig = configContent;
-  
-  // Insert plugin configuration before the closing bracket of plugins array
+
+  // Insert plugin configuration using safe array method
+  // 1. Extract all plugins to temp array
+  // 2. Add new plugin to temp array 
+  // 3. Replace entire plugins array using join()
   const pluginsMatch = updatedConfig.match(/(plugins:\s*\[)([\s\S]*?)(\],)/);
   if (pluginsMatch) {
     let pluginsContent = pluginsMatch[2];
-    
-    // Build new plugins array content with proper formatting
-    let newPluginsContent;
-    if (pluginsContent.trim() === '') {
-      // Empty plugins array - add first plugin
-      newPluginsContent = '\n    ' + pluginConfig.replace(/^    /, '') + '\n  ';
-    } else {
-      // Has existing plugins - add comma and new plugin
-      // Remove trailing whitespace and add comma + new plugin
-      const cleanContent = pluginsContent.replace(/\s+$/, '');
-      newPluginsContent = cleanContent + ',\n    ' + pluginConfig.replace(/^    /, '') + '\n  ';
+
+    // Step 1: Extract existing plugins to temp array
+    const tempArray = [];
+
+    // Parse existing plugins (each plugin is an array like [pluginName, config])
+    if (pluginsContent.trim() !== '') {
+      // Match plugin arrays: each starts with [ and ends with ],
+      const pluginMatches = pluginsContent.match(/\[[^[\]]*'@docusaurus[^[\]]*\{[\s\S]*?\}[^[\]]*\],?/g);
+      if (pluginMatches) {
+        for (const plugin of pluginMatches) {
+          const cleanPlugin = plugin.replace(/,$/, '').trim();
+          if (cleanPlugin && cleanPlugin !== '[]') {
+            tempArray.push(cleanPlugin);
+          }
+        }
+      }
     }
-    
+
+    // Step 2: Add new plugin to temp array (clean format)
+    tempArray.push(pluginConfig);
+
+    // Step 3: Build clean plugins array using join()
+    const newPluginsContent = tempArray.length > 0 ? tempArray.join(', ') : '';
+
+    // Step 4: Replace entire plugins array
     updatedConfig = updatedConfig.replace(
       pluginsMatch[0],
       pluginsMatch[1] + newPluginsContent + pluginsMatch[3]
     );
   }
-  
-  // Insert sidebar item in the navbar dropdown items array
-  // Look for the Projects dropdown specifically - more flexible regex
-  const navbarItemsMatch = updatedConfig.match(/(type:\s*'dropdown',\s*[\s\S]*?label:\s*'Projects',\s*[\s\S]*?items:\s*\[)([\s\S]*?)(\n\s*\]\s*\n\s*\})/);
+
+  // Insert sidebar item in the navbar dropdown items array using safer method
+  // 1. Extract all items to temp array
+  // 2. Empty original array  
+  // 3. Add new item to temp array
+  // 4. Replace entire items array
+  const navbarItemsMatch = updatedConfig.match(/(type:\s*'dropdown',\s*[\s\S]*?label:\s*'Projects',\s*[\s\S]*?items:\s*\[)([\s\S]*?)(\]\s*\})/);
   if (navbarItemsMatch) {
     let navbarItemsContent = navbarItemsMatch[2];
-    
-    // Build new navbar items content with proper formatting
-    let newNavbarContent;
-    if (navbarItemsContent.trim() === '') {
-      // Empty items array - add first item
-      newNavbarContent = '\n              ' + sidebarItem.replace(/^              /, '') + '\n            ';
-    } else {
-      // Has existing items - add comma and new item
-      // Remove trailing whitespace and add comma + new item
-      const cleanContent = navbarItemsContent.replace(/\s+$/, '');
-      newNavbarContent = cleanContent + ',\n              ' + sidebarItem.replace(/^              /, '') + '\n            ';
+
+    // Step 1: Extract existing items to temp array
+    const tempArray = [];
+
+    // Parse existing items (remove commas, whitespace, and extract clean items)
+    if (navbarItemsContent.trim() !== '') {
+      // Split by closing brace followed by comma to separate items
+      const itemMatches = navbarItemsContent.match(/\{[\s\S]*?\},?/g);
+      if (itemMatches) {
+        for (const item of itemMatches) {
+          const cleanItem = item.replace(/,$/, '').trim();
+          if (cleanItem && cleanItem !== '{}') {
+            tempArray.push(cleanItem);
+          }
+        }
+      }
     }
-    
+
+    // Step 2: Add new item to temp array (already clean format)
+    tempArray.push(sidebarItem);
+
+    // Step 3: Build clean items array content using join()
+    const newNavbarContent = tempArray.length > 0 ? tempArray.join(', ') : '';
+
+    // Step 4: Replace entire items array
     updatedConfig = updatedConfig.replace(
       navbarItemsMatch[0],
       navbarItemsMatch[1] + newNavbarContent + navbarItemsMatch[3]
     );
   }
-  
+
   // Write updated config
   fs.writeFileSync(configPath, updatedConfig, 'utf8');
-  
+
   // Create sidebar file for the project
   const sidebarPath = path.join(__dirname, `../../docupilot/${projectSlug}/sidebars.js`);
   const sidebarDir = path.dirname(sidebarPath);
-  
+
   // Ensure directory exists
   if (!fs.existsSync(sidebarDir)) {
     fs.mkdirSync(sidebarDir, { recursive: true });
   }
-  
-  const sidebarContent = `// @ts-check
 
+  const sidebarContent = `// @ts-check
 /** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
 const sidebars = {
   ${sidebarId}: [
@@ -146,120 +174,110 @@ const sidebars = {
 
 export default sidebars;
 `;
-  
+
   fs.writeFileSync(sidebarPath, sidebarContent, 'utf8');
 }
 
 // Helper function to remove project from Docusaurus config
 async function removeFromDocusaurusConfig(projectSlug) {
   const configPath = path.join(__dirname, '../../docupilot/docusaurus.config.js');
-  
+
   if (!fs.existsSync(configPath)) {
     throw new Error(`Config file not found at: ${configPath}`);
   }
-  
+
   // Create backup before making changes
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const timestampedBackupPath = path.join(__dirname, `../../docupilot/docusaurus.config.${timestamp}.backup.js`);
-  
+
   const configContent = fs.readFileSync(configPath, 'utf8');
   fs.writeFileSync(timestampedBackupPath, configContent, 'utf8');
   console.log(`Config backup created: ${timestampedBackupPath}`);
-  
+
   let updatedConfig = configContent;
-  
-  // Remove plugin configuration - use a more precise approach
-  // First find the plugins array
-  const pluginsMatch = updatedConfig.match(/(plugins:\s*\[)([\s\S]*?)(\],\s*\n\s*themeConfig)/);
+
+  // Remove plugin configuration using safe array method
+  const pluginsMatch = updatedConfig.match(/(plugins:\s*\[)([\s\S]*?)(\],)/);
   if (pluginsMatch) {
     let pluginsContent = pluginsMatch[2];
-    
-    // Split into individual plugin blocks and filter out the target
-    const pluginBlocks = [];
-    let currentBlock = '';
-    let bracketCount = 0;
-    let inPlugin = false;
-    
-    const lines = pluginsContent.split('\n');
-    for (let line of lines) {
-      // Check if this line starts a new plugin block
-      if (line.trim().startsWith('[') && line.includes('@docusaurus/plugin-content-docs')) {
-        if (currentBlock.trim() && !currentBlock.includes(`id: '${projectSlug}'`)) {
-          pluginBlocks.push(currentBlock);
-        }
-        currentBlock = line + '\n';
-        inPlugin = true;
-        bracketCount = 1;
-      } else if (inPlugin) {
-        currentBlock += line + '\n';
-        // Count brackets to know when plugin block ends
-        bracketCount += (line.match(/\[/g) || []).length;
-        bracketCount -= (line.match(/\]/g) || []).length;
-        
-        if (bracketCount === 0) {
-          // Plugin block is complete
-          if (!currentBlock.includes(`id: '${projectSlug}'`)) {
-            pluginBlocks.push(currentBlock.replace(/,\s*$/, ''));
+
+    // Step 1: Extract existing plugins to temp array, filtering out the target
+    const tempArray = [];
+
+    if (pluginsContent.trim() !== '') {
+      // Match plugin arrays: each starts with [ and ends with ],
+      const pluginMatches = pluginsContent.match(/\[[^[\]]*'@docusaurus[^[\]]*\{[\s\S]*?\}[^[\]]*\],?/g);
+      if (pluginMatches) {
+        for (const plugin of pluginMatches) {
+          const cleanPlugin = plugin.replace(/,$/, '').trim();
+          // Skip plugins that match the projectSlug we want to remove
+          if (cleanPlugin && cleanPlugin !== '[]' && !cleanPlugin.includes(`id: '${projectSlug}'`)) {
+            tempArray.push(cleanPlugin);
           }
-          currentBlock = '';
-          inPlugin = false;
-        }
-      } else {
-        // Line outside plugin blocks (whitespace, comments)
-        if (currentBlock === '' && line.trim() === '') {
-          // Skip empty lines between plugins
-        } else {
-          currentBlock += line + '\n';
         }
       }
     }
-    
-    // Handle the last block if it doesn't end the plugin array
-    if (currentBlock.trim() && !currentBlock.includes(`id: '${projectSlug}'`)) {
-      pluginBlocks.push(currentBlock);
-    }
-    
-    // Reconstruct the plugins array
-    let newPluginsContent = pluginBlocks.join(',\n').replace(/,\s*$/, '');
-    if (newPluginsContent.trim() === '') {
-      newPluginsContent = '\n  ';
-    } else {
-      newPluginsContent = '\n' + newPluginsContent + '\n  ';
-    }
-    
+
+    // Step 2: Build clean plugins array using join()
+    const newPluginsContent = tempArray.length > 0
+      ? '\n    ' + tempArray.join(',\n    ') + '\n  '
+      : '\n  ';
+
+    // Step 3: Replace entire plugins array
     updatedConfig = updatedConfig.replace(
       pluginsMatch[0],
       pluginsMatch[1] + newPluginsContent + pluginsMatch[3]
     );
   }
-  
-  // Remove sidebar item from navbar
+
+  // Remove sidebar item from navbar using safe array method
   const sidebarId = generateSidebarId(projectSlug);
-  const sidebarItemRegex = new RegExp(`\\s*\\{\\s*type:\\s*'docSidebar',\\s*sidebarId:\\s*'${sidebarId}'[\\s\\S]*?\\},?`, 'g');
-  updatedConfig = updatedConfig.replace(sidebarItemRegex, '');
-  
-  // Clean up any double commas or trailing commas - be more specific and safe
-  updatedConfig = updatedConfig.replace(/,(\s*,)+/g, ',');
-  
+
+  const navbarItemsMatch = updatedConfig.match(/(type:\s*'dropdown',\s*[\s\S]*?label:\s*'Projects',\s*[\s\S]*?items:\s*\[)([\s\S]*?)(\]\s*\})/);
+  if (navbarItemsMatch) {
+    let navbarItemsContent = navbarItemsMatch[2];
+
+    // Step 1: Extract existing items to temp array, filtering out the target
+    const tempArray = [];
+
+    if (navbarItemsContent.trim() !== '') {
+      const itemMatches = navbarItemsContent.match(/\{[\s\S]*?\},?/g);
+      if (itemMatches) {
+        for (const item of itemMatches) {
+          const cleanItem = item.replace(/,$/, '').trim();
+          // Skip items that match the sidebarId we want to remove
+          if (cleanItem && cleanItem !== '{}' && !cleanItem.includes(`sidebarId: '${sidebarId}'`)) {
+            tempArray.push(cleanItem);
+          }
+        }
+      }
+    }
+
+    // Step 2: Build clean items array content using join()
+    const newNavbarContent = tempArray.length > 0
+      ? '\n              ' + tempArray.join(',\n              ') + '\n            '
+      : '\n            ';
+
+    // Step 3: Replace entire items array
+    updatedConfig = updatedConfig.replace(
+      navbarItemsMatch[0],
+      navbarItemsMatch[1] + newNavbarContent + navbarItemsMatch[3]
+    );
+  }
+
   // Fix empty plugins array if all plugins were removed
   updatedConfig = updatedConfig.replace(/plugins:\s*\[\s*\]/g, 'plugins: []');
-  
-  // Remove trailing commas in specific contexts only
-  // 1. Before closing ] in plugins array when it's followed by themeConfig
-  updatedConfig = updatedConfig.replace(/,(\s*\],\s*\n\s*themeConfig)/g, '$1');
-  
-  // 2. Before closing ] in navbar items array
   updatedConfig = updatedConfig.replace(/,(\s*\]\s*\n\s*\}\s*,\s*\n\s*\{.*?to:\s*'\/blog')/g, '$1');
-  
+
   fs.writeFileSync(configPath, updatedConfig, 'utf8');
   console.log(`Removed ${projectSlug} from Docusaurus config`);
-  
+
   // Remove sidebar file
   const sidebarPath = path.join(__dirname, `../../docupilot/${projectSlug}/sidebars.js`);
   if (fs.existsSync(sidebarPath)) {
     fs.unlinkSync(sidebarPath);
   }
-  
+
   // Remove project directory if empty
   const projectDir = path.join(__dirname, `../../docupilot/${projectSlug}`);
   if (fs.existsSync(projectDir)) {
@@ -278,16 +296,16 @@ router.post('/create-project', async (req, res) => {
 
     // Validate required fields
     if (!projectTitle || !repositoryUrl) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: 'Project title and repository URL are required' 
+        message: 'Project title and repository URL are required'
       });
     }
 
     // Validate repository URL format (HTTP/HTTPS/SSH)
     const httpPattern = /^https?:\/\/.+/;
     const sshPattern = /^(git@[^:]+:.+|ssh:\/\/git@.+)/; // Support both git@host:user/repo and ssh://git@host/path/repo formats
-    
+
     if (!httpPattern.test(repositoryUrl) && !sshPattern.test(repositoryUrl)) {
       return res.status(400).json({
         success: false,
@@ -297,7 +315,7 @@ router.post('/create-project', async (req, res) => {
 
     // Path to the initialization script (now in backend/scripts)
     const scriptPath = path.join(__dirname, '../scripts/initialize-project.sh');
-    
+
     // Build command string with proper escaping
     const escapedArgs = [
       `"${projectTitle.replace(/"/g, '\\"')}"`,
@@ -307,10 +325,10 @@ router.post('/create-project', async (req, res) => {
     ];
 
     const command = `bash "${scriptPath}" ${escapedArgs.join(' ')}`;
-    
+
     console.log(`[${new Date().toISOString()}] Executing: ${command}`);
-    
-    const output = execSync(command, { 
+
+    const output = execSync(command, {
       encoding: 'utf-8',
       cwd: path.join(__dirname, '..'), // Set working directory to backend root
       timeout: 120000, // 2 minute timeout
@@ -320,7 +338,7 @@ router.post('/create-project', async (req, res) => {
 
     console.log(`[${new Date().toISOString()}] Script output:`, output);
     console.log(`[${new Date().toISOString()}] Project created successfully: ${projectTitle}`);
-    
+
     // Update Docusaurus config after successful project creation
     try {
       await updateDocusaurusConfig(projectTitle);
@@ -346,14 +364,14 @@ router.post('/create-project', async (req, res) => {
     console.error(`[${new Date().toISOString()}] Error creating project:`, error);
     console.error(`[${new Date().toISOString()}] Error stdout:`, error.stdout?.toString());
     console.error(`[${new Date().toISOString()}] Error stderr:`, error.stderr?.toString());
-    
+
     // Parse error message for better user feedback
     let errorMessage = 'Failed to create project';
     let statusCode = 500;
-    
+
     const stdout = error.stdout?.toString() || '';
     const stderr = error.stderr?.toString() || '';
-    
+
     if (stdout.includes('Project workspace already exists')) {
       errorMessage = 'A project with this title already exists. Please choose a different project title or delete the existing project first.';
       statusCode = 409; // Conflict
@@ -375,7 +393,7 @@ router.post('/create-project', async (req, res) => {
     } else if (stderr) {
       errorMessage = stderr.trim();
     }
-    
+
     return res.status(statusCode).json({
       success: false,
       message: errorMessage,
@@ -388,10 +406,17 @@ router.post('/create-project', async (req, res) => {
 
 // Get project status/info
 router.get('/projects', (req, res) => {
+  // Set cache control headers to prevent caching
+  res.set({
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  
   try {
     const repositoriesPath = path.join(__dirname, '../../repositories');
     const docupilotPath = path.join(__dirname, '../../docupilot');
-    
+
     if (!fs.existsSync(repositoriesPath)) {
       return res.json({
         success: true,
@@ -399,28 +424,28 @@ router.get('/projects', (req, res) => {
         projects: []
       });
     }
-    
+
     const projects = [];
     const projectDirs = fs.readdirSync(repositoriesPath).filter(dir => {
       const fullPath = path.join(repositoriesPath, dir);
       return fs.statSync(fullPath).isDirectory();
     });
-    
+
     for (const projectSlug of projectDirs) {
       const repoPath = path.join(repositoriesPath, projectSlug);
       const docPath = path.join(docupilotPath, projectSlug);
-      
+
       // Try to get project info
       let projectInfo = {
         slug: projectSlug,
-        title: projectSlug.split('-').map(word => 
+        title: projectSlug.split('-').map(word =>
           word.charAt(0).toUpperCase() + word.slice(1)
         ).join(' '),
         hasRepository: fs.existsSync(repoPath),
         hasDocumentation: fs.existsSync(docPath),
         createdAt: fs.statSync(repoPath).birthtime
       };
-      
+
       // Try to get git info
       try {
         const gitConfigPath = path.join(repoPath, '.git', 'config');
@@ -434,18 +459,18 @@ router.get('/projects', (req, res) => {
       } catch (gitError) {
         // Git info not available
       }
-      
+
       projects.push(projectInfo);
     }
-    
+
     // Sort by creation date (newest first)
     projects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
+
     res.json({
       success: true,
       projects: projects
     });
-    
+
   } catch (error) {
     console.error('Error listing projects:', error);
     res.status(500).json({
@@ -460,19 +485,19 @@ router.get('/projects', (req, res) => {
 router.delete('/projects/:projectSlug', async (req, res) => {
   try {
     const { projectSlug } = req.params;
-    
+
     if (!projectSlug) {
       return res.status(400).json({
         success: false,
         message: 'Project slug is required'
       });
     }
-    
+
     const repositoriesPath = path.join(__dirname, '../../repositories');
     const docupilotPath = path.join(__dirname, '../../docupilot');
     const repoPath = path.join(repositoriesPath, projectSlug);
     const docPath = path.join(docupilotPath, projectSlug);
-    
+
     // Check if project exists
     if (!fs.existsSync(repoPath) && !fs.existsSync(docPath)) {
       return res.status(404).json({
@@ -480,26 +505,26 @@ router.delete('/projects/:projectSlug', async (req, res) => {
         message: 'Project not found'
       });
     }
-    
+
     // Create backup before deletion
     const backupsPath = path.join(__dirname, '../../backups');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupDir = path.join(backupsPath, `${projectSlug}_deleted_${timestamp}`);
-    
+
     fs.mkdirSync(backupDir, { recursive: true });
-    
+
     // Backup repository if exists
     if (fs.existsSync(repoPath)) {
       const backupRepoPath = path.join(backupDir, 'repository');
       fs.renameSync(repoPath, backupRepoPath);
     }
-    
+
     // Backup documentation if exists
     if (fs.existsSync(docPath)) {
       const backupDocPath = path.join(backupDir, 'documentation');
       fs.renameSync(docPath, backupDocPath);
     }
-    
+
     // Remove from Docusaurus config
     try {
       await removeFromDocusaurusConfig(projectSlug);
@@ -507,13 +532,13 @@ router.delete('/projects/:projectSlug', async (req, res) => {
       console.warn('Failed to remove from Docusaurus config:', configError.message);
       // Don't fail the deletion if config update fails
     }
-    
+
     res.json({
       success: true,
       message: 'Project deleted successfully',
       backup: backupDir
     });
-    
+
   } catch (error) {
     console.error('Error deleting project:', error);
     res.status(500).json({

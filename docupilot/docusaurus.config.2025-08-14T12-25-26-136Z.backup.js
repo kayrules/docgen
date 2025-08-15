@@ -77,7 +77,7 @@ const config = {
     ]
   ],
 
-  plugins: [
+  plugins: [],
     [
       '@docusaurus/plugin-content-docs',
       {
@@ -118,9 +118,9 @@ const config = {
                 sidebarId: 'ubedaAfbSidebar',
                 label: 'UBEDA AFB',
                 docsPluginId: 'ubeda-afb',
-              },
+              }
             
-            
+
             ]
           },
           { to: '/blog', label: 'Blog', position: 'left' },

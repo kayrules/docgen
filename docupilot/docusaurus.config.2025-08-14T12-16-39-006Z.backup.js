@@ -81,10 +81,10 @@ const config = {
     [
       '@docusaurus/plugin-content-docs',
       {
-        id: 'ubeda-afb',
-        path: 'ubeda-afb',
-        routeBasePath: 'ubeda-afb',
-        sidebarPath: './ubeda-afb/sidebars.js',
+        id: 'ubeda-mfe',
+        path: 'ubeda-mfe',
+        routeBasePath: 'ubeda-mfe',
+        sidebarPath: './ubeda-mfe/sidebars.js',
         editUrl: 'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
       },
     ],
@@ -115,12 +115,10 @@ const config = {
             items: [
               {
                 type: 'docSidebar',
-                sidebarId: 'ubedaAfbSidebar',
-                label: 'UBEDA AFB',
-                docsPluginId: 'ubeda-afb',
-              },
-            
-            
+                sidebarId: 'ubedaMfeSidebar',
+                label: 'UBEDA MFE',
+                docsPluginId: 'ubeda-mfe',
+              }
             ]
           },
           { to: '/blog', label: 'Blog', position: 'left' },

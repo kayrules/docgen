@@ -12,7 +12,7 @@ const FeatureList = [
         and performance best practices for modern web applications.
       </>
     ),
-    link: '/ubeda-afb/',
+    link: '/tutorials/intro/',
   },
   {
     title: 'Backend Services',
@@ -23,7 +23,7 @@ const FeatureList = [
         authentication, and microservices architecture.
       </>
     ),
-    link: '/ubeda-afb/',
+    link: '/tutorials/intro/',
   },
   {
     title: 'API Reference',
@@ -34,7 +34,7 @@ const FeatureList = [
         and integration examples for developers.
       </>
     ),
-    link: '/ubeda-afb/',
+    link: '/tutorials/intro/',
   },
 ];
 
@@ -85,7 +85,7 @@ export default function HomepageFeatures() {
                 </p>
                 <a
                   className="button button--outline button--primary"
-                  href="/ubeda-afb/">
+                  href="/tutorials/intro">
                   View DevOps Docs →
                 </a>
               </div>
@@ -101,7 +101,7 @@ export default function HomepageFeatures() {
                 </p>
                 <a
                   className="button button--outline button--secondary"
-                  href="/ubeda-afb/">
+                  href="/tutorials/intro">
                   View Tutorials →
                 </a>
               </div>
