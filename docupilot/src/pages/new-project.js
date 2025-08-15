@@ -89,7 +89,7 @@ export default function NewProject() {
         <div style={{ maxWidth: '600px', width: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <Heading as="h1">Create New Project</Heading>
-            <p style={{ fontSize: '18px', color: 'var(--ifm-color-emphasis-700)' }}>
+            <p style={{ fontSize: '16px', color: 'var(--ifm-color-emphasis-700)' }}>
               Fill in the details below to create a new project documentation.
             </p>
           </div>
@@ -119,10 +119,10 @@ export default function NewProject() {
                 placeholder="Enter your project title"
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: '0.5rem',
                   borderRadius: '4px',
                   border: '1px solid var(--ifm-color-emphasis-300)',
-                  fontSize: '16px',
+                  fontSize: '14px',
                   backgroundColor: 'white'
                 }}
               />
@@ -147,10 +147,10 @@ export default function NewProject() {
                 placeholder="https://github.com/username/repository, git@github.com:username/repository.git, or ssh://git@host/path/repo.git"
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: '0.5rem',
                   borderRadius: '4px',
                   border: '1px solid var(--ifm-color-emphasis-300)',
-                  fontSize: '16px',
+                  fontSize: '14px',
                   backgroundColor: 'white'
                 }}
               />
@@ -174,10 +174,10 @@ export default function NewProject() {
                 placeholder="main"
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: '0.5rem',
                   borderRadius: '4px',
                   border: '1px solid var(--ifm-color-emphasis-300)',
-                  fontSize: '16px',
+                  fontSize: '14px',
                   backgroundColor: 'white'
                 }}
               />
@@ -201,10 +201,10 @@ export default function NewProject() {
                 rows="4"
                 style={{
                   width: '100%',
-                  padding: '0.75rem',
+                  padding: '0.5rem',
                   borderRadius: '4px',
                   border: '1px solid var(--ifm-color-emphasis-300)',
-                  fontSize: '16px',
+                  fontSize: '14px',
                   backgroundColor: 'white',
                   resize: 'vertical'
                 }}
@@ -229,11 +229,8 @@ export default function NewProject() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="button button--primary button--lg"
+                className="button button--primary"
                 style={{
-                  padding: '0.75rem 2rem',
-                  fontSize: '18px',
-                  fontWeight: 'bold',
                   opacity: isLoading ? 0.6 : 1,
                   cursor: isLoading ? 'not-allowed' : 'pointer',
                   marginRight: '1rem'
@@ -243,20 +240,12 @@ export default function NewProject() {
               </button>
               <a
                 href="/projects"
-                className="button button--secondary button--lg"
+                className="button button--secondary"
                 style={{
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '0.75rem 2rem',
-                  fontSize: '18px',
-                  fontWeight: 'bold'
+                  textDecoration: 'none'
                 }}
               >
-                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style={{ marginRight: '8px' }}>
-                  <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zM2.5 2a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zM1 10.5A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3zm6.5.5A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3zm1.5-.5a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z" />
-                </svg>
-                View Projects
+                Manage Projects
               </a>
             </div>
           </form>

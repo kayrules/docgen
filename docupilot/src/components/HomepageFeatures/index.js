@@ -9,34 +9,37 @@ const FeatureList = [
     Svg: require('@site/static/img/undraw_online-organizer_1kdy.svg').default,
     description: (
       <>
-        Automatically reads an online code repository and generates documentation based on the code it finds. 
+        Automatically reads an online code repository and generates documentation based on the code it finds.
         It's great for quickly creating initial project documentation without manual effort.
       </>
     ),
+    link: '/tutorials/intro/',
   },
   {
     title: 'Step-by-step code explanation',
     Svg: require('@site/static/img/undraw_road-to-knowledge_f9zn.svg').default,
     description: (
       <>
-        Provides a detailed, line-by-line breakdown of a code snippet or function. 
+        Provides a detailed, line-by-line breakdown of a code snippet or function.
         It's useful for understanding complex logic, debugging, or learning a new language or framework by seeing how each part works together.
       </>
     ),
+    link: '/tutorials/intro/',
   },
   {
     title: 'Custom prompt-based documentation',
     Svg: require('@site/static/img/undraw_booking_1ztt.svg').default,
     description: (
       <>
-        Allows you to generate documentation tailored to a specific request or prompt. 
+        Allows you to generate documentation tailored to a specific request or prompt.
         Instead of creating a standard document, you can ask for things like a "quick start guide," a "technical overview for senior developers," or an "API reference," and the system will create it for you.
       </>
     ),
+    link: '/tutorials/intro/',
   },
 ];
 
-function Feature({Svg, title, description, link}) {
+function Feature({ Svg, title, description, link }) {
   return (
     <div className={clsx('col col--4')}>
       <div className="text--center">
@@ -83,7 +86,7 @@ export default function HomepageFeatures() {
                 </p>
                 <a
                   className="button button--outline button--primary"
-                  href="/ubeda-afb/">
+                  href="/tutorials/intro">
                   View DevOps Docs →
                 </a>
               </div>
@@ -99,7 +102,7 @@ export default function HomepageFeatures() {
                 </p>
                 <a
                   className="button button--outline button--secondary"
-                  href="/ubeda-afb/">
+                  href="/tutorials/intro">
                   View Tutorials →
                 </a>
               </div>

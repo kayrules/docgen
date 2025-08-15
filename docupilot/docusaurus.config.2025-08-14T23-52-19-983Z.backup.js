@@ -77,7 +77,15 @@ const config = {
     ]
   ],
 
-  plugins: [],
+  plugins: [[
+    '@docusaurus/plugin-content-docs',
+    {
+      id: 'tesla-rhbme',
+      path: 'tesla-rhbme',
+      routeBasePath: 'tesla-rhbme',
+      sidebarPath: './tesla-rhbme/sidebars.js',
+    },
+  ]],
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -102,6 +110,12 @@ const config = {
             label: 'Projects',
             position: 'left',
             items: [
+              {
+                type: 'docSidebar',
+                sidebarId: 'teslaRhbmeSidebar',
+                label: 'Tesla RHBme',
+                docsPluginId: 'tesla-rhbme',
+              }
             ]
           },
           { to: '/blog', label: 'Blog', position: 'left' },

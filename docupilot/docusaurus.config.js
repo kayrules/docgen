@@ -77,22 +77,23 @@ const config = {
     ]
   ],
 
-  plugins: [
-    [
-      '@docusaurus/plugin-content-docs',
-      {
-        id: 'ubeda-afb',
-        path: 'ubeda-afb',
-        routeBasePath: 'ubeda-afb',
-        sidebarPath: './ubeda-afb/sidebars.js',
-        editUrl: 'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-      },
-    ],
-  ],
-  
-  stylesheets: [
-    "https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css",
-  ],
+  plugins: [[
+    '@docusaurus/plugin-content-docs',
+    {
+      id: 'tesla-rhbme',
+      path: 'tesla-rhbme',
+      routeBasePath: 'tesla-rhbme',
+      sidebarPath: './tesla-rhbme/sidebars.js',
+    },
+  ], [
+    '@docusaurus/plugin-content-docs',
+    {
+      id: 'ubeda-afb',
+      path: 'ubeda-afb',
+      routeBasePath: 'ubeda-afb',
+      sidebarPath: './ubeda-afb/sidebars.js',
+    },
+  ]],
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -112,6 +113,7 @@ const config = {
             label: 'Tutorials',
             position: 'left'
           },
+          { to: '/blog', label: 'Blog', position: 'left' },
           {
             type: 'dropdown',
             label: 'Projects',
@@ -119,20 +121,22 @@ const config = {
             items: [
               {
                 type: 'docSidebar',
+                sidebarId: 'teslaRhbmeSidebar',
+                label: 'Tesla RHBme',
+                docsPluginId: 'tesla-rhbme',
+              },
+              {
+                type: 'docSidebar',
                 sidebarId: 'ubedaAfbSidebar',
                 label: 'UBEDA AFB',
                 docsPluginId: 'ubeda-afb',
-              },
-            
-            
-            
+              }
             ]
           },
-          { to: '/blog', label: 'Blog', position: 'left' },
           {
-            type: 'html',
-            position: 'right',
-            value: '<a href="/new-project" class="button button--primary button--sm" title="New Project" style="margin-right: 8px; display: flex; align-items: center;"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 4px;"><path fill-rule="evenodd" d="M8 2a.75.75 0 01.75.75v4.5h4.5a.75.75 0 010 1.5h-4.5v4.5a.75.75 0 01-1.5 0v-4.5h-4.5a.75.75 0 010-1.5h4.5v-4.5A.75.75 0 018 2z"></path></svg>New Project</a>'
+            to: '/projects',
+            label: 'Manage Projects',
+            position: 'right'
           },
           {
             href: 'https://github.com/facebook/docusaurus',
@@ -211,7 +215,7 @@ const config = {
       type: "module",
     },
   ],
-  
+
 };
 
 export default config;

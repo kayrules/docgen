@@ -101,10 +101,7 @@ const config = {
             type: 'dropdown',
             label: 'Projects',
             position: 'left',
-            items: [
-            
-            
-            ]
+            items: []
           },
           { to: '/blog', label: 'Blog', position: 'left' },
           {
