@@ -13,7 +13,6 @@ const FeatureList = [
         It's great for quickly creating initial project documentation without manual effort.
       </>
     ),
-    link: '/frontend/intro',
   },
   {
     title: 'Step-by-step code explanation',
@@ -24,7 +23,6 @@ const FeatureList = [
         It's useful for understanding complex logic, debugging, or learning a new language or framework by seeing how each part works together.
       </>
     ),
-    link: '/backend/intro',
   },
   {
     title: 'Custom prompt-based documentation',
@@ -35,7 +33,6 @@ const FeatureList = [
         Instead of creating a standard document, you can ask for things like a "quick start guide," a "technical overview for senior developers," or an "API reference," and the system will create it for you.
       </>
     ),
-    link: '/api/intro',
   },
 ];
 
