@@ -18,3 +18,9 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Ignore all docusaurus backup configs
+
+docusaurus.config.*.backup
+
+*.backup

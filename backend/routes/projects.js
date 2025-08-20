@@ -36,24 +36,24 @@ async function updateDocusaurusConfig(projectTitle, description) {
 
   // Read and parse the current config file
   const configContent = fs.readFileSync(configPath, 'utf8');
-  
+
   // Extract plugins and navbarItems arrays using regex
   const pluginsMatch = configContent.match(/const plugins = (\[[\s\S]*?\]);/);
   const navbarItemsMatch = configContent.match(/const navbarItems = (\[[\s\S]*?\]);/);
-  
+
   if (!pluginsMatch || !navbarItemsMatch) {
     throw new Error('Could not parse plugins or navbarItems from config file');
   }
-  
+
   // Parse the arrays (safely evaluate the JavaScript arrays)
   const currentPlugins = eval(pluginsMatch[1]);
   const currentNavbarItems = eval(navbarItemsMatch[1]);
 
   // Check if plugin already exists
-  const pluginExists = currentPlugins.some(plugin => 
+  const pluginExists = currentPlugins.some(plugin =>
     plugin[1] && plugin[1].id === projectSlug
   );
-  
+
   if (pluginExists) {
     console.log(`Plugin for ${projectSlug} already exists in config`);
     return;
@@ -136,26 +136,26 @@ async function removeFromDocusaurusConfig(projectSlug) {
 
   // Read and parse the current config file
   const configContent = fs.readFileSync(configPath, 'utf8');
-  
+
   // Extract plugins and navbarItems arrays using regex
   const pluginsMatch = configContent.match(/const plugins = (\[[\s\S]*?\]);/);
   const navbarItemsMatch = configContent.match(/const navbarItems = (\[[\s\S]*?\]);/);
-  
+
   if (!pluginsMatch || !navbarItemsMatch) {
     throw new Error('Could not parse plugins or navbarItems from config file');
   }
-  
+
   // Parse the arrays (safely evaluate the JavaScript arrays)
   const currentPlugins = eval(pluginsMatch[1]);
   const currentNavbarItems = eval(navbarItemsMatch[1]);
 
   // Remove plugin from plugins array
-  const filteredPlugins = currentPlugins.filter(plugin => 
+  const filteredPlugins = currentPlugins.filter(plugin =>
     !(plugin[1] && plugin[1].id === projectSlug)
   );
 
   // Remove navbar item from navbarItems array
-  const filteredNavbarItems = currentNavbarItems.filter(item => 
+  const filteredNavbarItems = currentNavbarItems.filter(item =>
     item.sidebarId !== sidebarId
   );
 
@@ -190,7 +190,7 @@ export {
 }
 
 // Create new project
-router.post('/create-project', async (req, res) => {
+router.post('/projec ', async (req, res) => {
   try {
     const { projectTitle, repositoryUrl, branchName, description } = req.body;
 
@@ -271,19 +271,19 @@ router.post('/create-project', async (req, res) => {
       const cloneCommand = `git clone "${repositoryUrl}" "${repoPath}"`;
       if (branchName && branchName !== 'main' && branchName !== 'master') {
         const branchCommand = `git clone -b "${branchName}" "${repositoryUrl}" "${repoPath}"`;
-        execSync(branchCommand, { 
-          encoding: 'utf-8', 
+        execSync(branchCommand, {
+          encoding: 'utf-8',
           timeout: 120000,
           maxBuffer: 1024 * 1024
         });
       } else {
-        execSync(cloneCommand, { 
-          encoding: 'utf-8', 
+        execSync(cloneCommand, {
+          encoding: 'utf-8',
           timeout: 120000,
           maxBuffer: 1024 * 1024
         });
       }
-      
+
       output += `Repository cloned successfully\n`;
 
       // Create documentation directory first
@@ -296,7 +296,7 @@ router.post('/create-project', async (req, res) => {
         // Base exclusion patterns for iOS/Android native files, common build folders
         const baseExclusions = [
           '*.xcodeproj',
-          '*.xcworkspace', 
+          '*.xcworkspace',
           '*.pbxproj',
           '*.storyboard',
           '*.xib',
@@ -313,7 +313,7 @@ router.post('/create-project', async (req, res) => {
           'DerivedData/*',
           'Pods/*'
         ];
-        
+
         // Read .gitignore if it exists and add those exclusions
         const gitignorePath = path.join(repoPath, '.gitignore');
         let gitignorePatterns = [];
@@ -328,25 +328,25 @@ router.post('/create-project', async (req, res) => {
         // Combine all exclusion patterns
         const allExclusions = [...baseExclusions, ...gitignorePatterns];
         const exclusionFlags = allExclusions.map(pattern => `-e "${pattern}"`).join(' ');
-        
+
         const fullCommand = `gitingest . ${exclusionFlags}`;
-        
-        execSync(fullCommand, { 
-          encoding: 'utf-8', 
+
+        execSync(fullCommand, {
+          encoding: 'utf-8',
           cwd: repoPath,
           timeout: 60000, // 1 minute timeout
           maxBuffer: 10 * 1024 * 1024 // 10MB buffer
         });
-        
+
         output += `Gitingest analysis completed\n`;
-        
+
         // Move digest.txt to docupilot directory and clean up repository
         const digestPath = path.join(repoPath, 'digest.txt');
         if (fs.existsSync(digestPath)) {
           const docDigestPath = path.join(docPath, 'digest.txt');
           fs.copyFileSync(digestPath, docDigestPath);
           output += `Repository digest moved to documentation: digest.txt\n`;
-          
+
           // Clean up the cloned repository - we only needed it for gitingest
           fs.rmSync(repoPath, { recursive: true, force: true });
           output += `Cleaned up temporary repository files\n`;
@@ -356,11 +356,11 @@ router.post('/create-project', async (req, res) => {
           fs.rmSync(repoPath, { recursive: true, force: true });
           output += `Cleaned up temporary repository files\n`;
         }
-        
+
       } catch (gitingestError) {
         console.warn(`[${new Date().toISOString()}] Warning: Gitingest failed:`, gitingestError.message);
         output += `Warning: Repository analysis failed - ${gitingestError.message}\n`;
-        
+
         // Clean up repository even if gitingest failed
         if (fs.existsSync(repoPath)) {
           fs.rmSync(repoPath, { recursive: true, force: true });
@@ -392,7 +392,7 @@ router.post('/create-project', async (req, res) => {
             }
           }
         };
-        
+
         copyFiles(templatesPath, docPath);
         output += `Template files copied and configured\n`;
       }
@@ -484,12 +484,12 @@ router.get('/projects', async (req, res) => {
     'Pragma': 'no-cache',
     'Expires': '0'
   });
-  
+
   try {
     const { search, limit = 50, offset = 0 } = req.query;
-    
+
     let projects;
-    
+
     if (search) {
       // Search projects
       projects = await Project.search(search, { limit: parseInt(limit) });
@@ -523,7 +523,7 @@ router.get('/projects', async (req, res) => {
 });
 
 // Delete project
-router.delete('/projects/:projectSlug', async (req, res) => {
+router.delete('/:projectSlug', async (req, res) => {
   try {
     const { projectSlug } = req.params;
 
@@ -582,7 +582,7 @@ router.delete('/projects/:projectSlug', async (req, res) => {
 router.get('/projects/:projectSlug', async (req, res) => {
   try {
     const { projectSlug } = req.params;
-    
+
     const project = await Project.findBySlug(projectSlug);
     if (!project) {
       return res.status(404).json({
@@ -613,7 +613,7 @@ router.get('/projects/:projectSlug', async (req, res) => {
 router.get('/statistics', async (req, res) => {
   try {
     const stats = await Project.getStatistics();
-    
+
     res.json({
       success: true,
       data: stats

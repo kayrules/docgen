@@ -8,3 +8,7 @@ backups/*/**
 /backups
 /repositories
 /documentations
+
+docusaurus.config.*.backup
+
+*.backup

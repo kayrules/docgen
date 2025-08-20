@@ -11,16 +11,16 @@ export default function Projects() {
   // Load projects on component mount and when page becomes visible
   useEffect(() => {
     loadProjects();
-    
+
     // Refresh when user returns to the tab/page
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         loadProjects();
       }
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };

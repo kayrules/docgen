@@ -43,3 +43,9 @@ Thumbs.db
 # Temporary folders
 tmp/
 temp/
+
+
+# Ignore all docusaurus backup configs
+docusaurus.config.*.backup
+
+*.backup

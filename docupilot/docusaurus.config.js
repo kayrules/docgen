@@ -89,7 +89,7 @@ const config = {
         title: 'DocuPilot',
         logo: {
           alt: 'DocuPilot Logo',
-          src: 'img/logo.svg'
+          src: 'img/logo docupilot.png'
         },
         items: [
           {
@@ -175,7 +175,19 @@ const config = {
         theme: prismThemes.github,
         darkTheme: prismThemes.dracula
       }
-    })
+    }),
+
+  scripts: [
+    {
+      src: "https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js",
+      type: "module",
+    },
+    {
+      src: "/js/n8n-chat-init.js",
+      type: "module",
+    },
+  ],
+
 };
 
 export default config;
