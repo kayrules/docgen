@@ -13,17 +13,6 @@ export default function NewProject() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  // Helper function to generate project slug from title
-  const generateSlug = (title) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-/, '')
-      .replace(/-$/, '');
-  };
-
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -49,7 +38,7 @@ export default function NewProject() {
       const result = await response.json();
 
       if (result.success) {
-        setMessage('✅ Project created successfully! Redirecting to documentation...');
+        setMessage('✅ Project created successfully! Redirecting to projects list...');
         // Reset form
         setFormData({
           projectTitle: '',
@@ -58,10 +47,9 @@ export default function NewProject() {
           description: ''
         });
 
-        // Generate project slug and redirect to project documentation
-        const projectSlug = generateSlug(formData.projectTitle);
+        // Redirect to projects list page
         setTimeout(() => {
-          window.location.href = `/${projectSlug}`;
+          window.location.href = '/projects';
         }, 1500); // Give user time to see success message
       } else {
         setMessage(`❌ Error: ${result.message}`);

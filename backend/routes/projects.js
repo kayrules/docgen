@@ -2,6 +2,7 @@ const express = require('express');
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const Project = require('../models/Project');
 const router = express.Router();
 
 // Helper function to generate camelCase sidebar ID from project slug
@@ -23,134 +24,74 @@ function generateSlug(title) {
 }
 
 // Helper function to update Docusaurus config
-async function updateDocusaurusConfig(projectTitle) {
+async function updateDocusaurusConfig(projectTitle, description) {
   const projectSlug = generateSlug(projectTitle);
   const sidebarId = generateSidebarId(projectSlug);
-  const configPath = path.join(__dirname, '../../docupilot/docusaurus.config.js');
-
-  // Create backup before making changes
-  // const backupPath = path.join(__dirname, '../../docupilot/docusaurus.config.backup.js');
-  // const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  // const timestampedBackupPath = path.join(__dirname, `../../docupilot/docusaurus.config.${timestamp}.backup.js`);
+  const configPath = path.join(__dirname, '../../docupilot/configs.js');
 
   // Check if config file exists
   if (!fs.existsSync(configPath)) {
     throw new Error(`Config file not found at: ${configPath}`);
   }
 
-  // Read current config
+  // Read and parse the current config file
   const configContent = fs.readFileSync(configPath, 'utf8');
-
-  // Create backup with timestamp
-  // fs.writeFileSync(timestampedBackupPath, configContent, 'utf8');
-  // console.log(`Config backup created: ${timestampedBackupPath}`);
+  
+  // Extract plugins and navbarItems arrays using regex
+  const pluginsMatch = configContent.match(/const plugins = (\[[\s\S]*?\]);/);
+  const navbarItemsMatch = configContent.match(/const navbarItems = (\[[\s\S]*?\]);/);
+  
+  if (!pluginsMatch || !navbarItemsMatch) {
+    throw new Error('Could not parse plugins or navbarItems from config file');
+  }
+  
+  // Parse the arrays (safely evaluate the JavaScript arrays)
+  const currentPlugins = eval(pluginsMatch[1]);
+  const currentNavbarItems = eval(navbarItemsMatch[1]);
 
   // Check if plugin already exists
-  if (configContent.includes(`id: '${projectSlug}'`)) {
+  const pluginExists = currentPlugins.some(plugin => 
+    plugin[1] && plugin[1].id === projectSlug
+  );
+  
+  if (pluginExists) {
     console.log(`Plugin for ${projectSlug} already exists in config`);
     return;
   }
 
-  // Add plugin configuration
-  const pluginConfig = `[
+  // Add new plugin to plugins array
+  const newPlugin = [
     '@docusaurus/plugin-content-docs',
     {
-      id: '${projectSlug}',
-      path: '${projectSlug}',
-      routeBasePath: '${projectSlug}',
-      sidebarPath: './${projectSlug}/sidebars.js',
+      id: projectSlug,
+      path: projectSlug,
+      routeBasePath: projectSlug,
+      sidebarPath: `./${projectSlug}/sidebars.js`,
     },
-  ]`;
+  ];
+  currentPlugins.push(newPlugin);
 
-  // Add sidebar item to navbar
-  const sidebarItem = `{
+  // Add new navbar item to navbarItems array
+  const newNavbarItem = {
     type: 'docSidebar',
-    sidebarId: '${sidebarId}',
-    label: '${projectTitle}',
-    docsPluginId: '${projectSlug}',
-  }`;
+    sidebarId: sidebarId,
+    label: projectTitle,
+    docsPluginId: projectSlug,
+  };
+  currentNavbarItems.push(newNavbarItem);
 
-  let updatedConfig = configContent;
+  // Generate new configs.js content
+  const newConfigContent = `const plugins = ${JSON.stringify(currentPlugins, null, 4).replace(/"/g, "'")};
 
-  // Insert plugin configuration using safe array method
-  // 1. Extract all plugins to temp array
-  // 2. Add new plugin to temp array 
-  // 3. Replace entire plugins array using join()
-  const pluginsMatch = updatedConfig.match(/(plugins:\s*\[)([\s\S]*?)(\],)/);
-  if (pluginsMatch) {
-    let pluginsContent = pluginsMatch[2];
+const navbarItems = ${JSON.stringify(currentNavbarItems, null, 4).replace(/"/g, "'")};
 
-    // Step 1: Extract existing plugins to temp array
-    const tempArray = [];
-
-    // Parse existing plugins (each plugin is an array like [pluginName, config])
-    if (pluginsContent.trim() !== '') {
-      // Match plugin arrays: each starts with [ and ends with ],
-      const pluginMatches = pluginsContent.match(/\[[^[\]]*'@docusaurus[^[\]]*\{[\s\S]*?\}[^[\]]*\],?/g);
-      if (pluginMatches) {
-        for (const plugin of pluginMatches) {
-          const cleanPlugin = plugin.replace(/,$/, '').trim();
-          if (cleanPlugin && cleanPlugin !== '[]') {
-            tempArray.push(cleanPlugin);
-          }
-        }
-      }
-    }
-
-    // Step 2: Add new plugin to temp array (clean format)
-    tempArray.push(pluginConfig);
-
-    // Step 3: Build clean plugins array using join()
-    const newPluginsContent = tempArray.length > 0 ? tempArray.join(', ') : '';
-
-    // Step 4: Replace entire plugins array
-    updatedConfig = updatedConfig.replace(
-      pluginsMatch[0],
-      pluginsMatch[1] + newPluginsContent + pluginsMatch[3]
-    );
-  }
-
-  // Insert sidebar item in the navbar dropdown items array using safer method
-  // 1. Extract all items to temp array
-  // 2. Empty original array  
-  // 3. Add new item to temp array
-  // 4. Replace entire items array
-  const navbarItemsMatch = updatedConfig.match(/(type:\s*'dropdown',\s*[\s\S]*?label:\s*'Projects',\s*[\s\S]*?items:\s*\[)([\s\S]*?)(\]\s*\})/);
-  if (navbarItemsMatch) {
-    let navbarItemsContent = navbarItemsMatch[2];
-
-    // Step 1: Extract existing items to temp array
-    const tempArray = [];
-
-    // Parse existing items (remove commas, whitespace, and extract clean items)
-    if (navbarItemsContent.trim() !== '') {
-      // Split by closing brace followed by comma to separate items
-      const itemMatches = navbarItemsContent.match(/\{[\s\S]*?\},?/g);
-      if (itemMatches) {
-        for (const item of itemMatches) {
-          const cleanItem = item.replace(/,$/, '').trim();
-          if (cleanItem && cleanItem !== '{}') {
-            tempArray.push(cleanItem);
-          }
-        }
-      }
-    }
-
-    // Step 2: Add new item to temp array (already clean format)
-    tempArray.push(sidebarItem);
-
-    // Step 3: Build clean items array content using join()
-    const newNavbarContent = tempArray.length > 0 ? tempArray.join(', ') : '';
-
-    // Step 4: Replace entire items array
-    updatedConfig = updatedConfig.replace(
-      navbarItemsMatch[0],
-      navbarItemsMatch[1] + newNavbarContent + navbarItemsMatch[3]
-    );
-  }
+export {
+    plugins,
+    navbarItems,
+}`;
 
   // Write updated config
-  fs.writeFileSync(configPath, updatedConfig, 'utf8');
+  fs.writeFileSync(configPath, newConfigContent, 'utf8');
 
   // Create sidebar file for the project
   const sidebarPath = path.join(__dirname, `../../docupilot/${projectSlug}/sidebars.js`);
@@ -167,7 +108,7 @@ const sidebars = {
   ${sidebarId}: [
     {
       type: 'html',
-      value: '<div style="margin-bottom: 1rem; border-bottom: 1px solid #ccc; padding-bottom: 1rem;"><div style="font-weight: bold; color: black; text-align: left; margin-bottom: 0.5rem;">${projectTitle}</div><div style="font-size: 14px; color: #666; text-align: left; line-height: 1.4;">${description || `Brief description of ${projectTitle}`}</div></div>',
+      value: '<div style="margin-bottom: 1rem; border-bottom: 1rem solid #ccc; padding-bottom: 1rem;"><div style="font-weight: bold; color: black; text-align: left; margin-bottom: 0.5rem;">${projectTitle}</div><div style="font-size: 14px; color: #666; text-align: left; line-height: 1.4;">${description || `Brief description of ${projectTitle}`}</div></div>',
       defaultStyle: true,
     },
     {
@@ -185,98 +126,50 @@ export default sidebars;
 
 // Helper function to remove project from Docusaurus config
 async function removeFromDocusaurusConfig(projectSlug) {
-  const configPath = path.join(__dirname, '../../docupilot/docusaurus.config.js');
+  const configPath = path.join(__dirname, '../../docupilot/configs.js');
 
   if (!fs.existsSync(configPath)) {
     throw new Error(`Config file not found at: ${configPath}`);
   }
 
-  // Create backup before making changes
-  // const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  // const timestampedBackupPath = path.join(__dirname, `../../docupilot/docusaurus.config.${timestamp}.backup.js`);
-
-  const configContent = fs.readFileSync(configPath, 'utf8');
-  // fs.writeFileSync(timestampedBackupPath, configContent, 'utf8');
-  // console.log(`Config backup created: ${timestampedBackupPath}`);
-
-  let updatedConfig = configContent;
-
-  // Remove plugin configuration using safe array method
-  const pluginsMatch = updatedConfig.match(/(plugins:\s*\[)([\s\S]*?)(\],)/);
-  if (pluginsMatch) {
-    let pluginsContent = pluginsMatch[2];
-
-    // Step 1: Extract existing plugins to temp array, filtering out the target
-    const tempArray = [];
-
-    if (pluginsContent.trim() !== '') {
-      // Match plugin arrays: each starts with [ and ends with ],
-      const pluginMatches = pluginsContent.match(/\[[^[\]]*'@docusaurus[^[\]]*\{[\s\S]*?\}[^[\]]*\],?/g);
-      if (pluginMatches) {
-        for (const plugin of pluginMatches) {
-          const cleanPlugin = plugin.replace(/,$/, '').trim();
-          // Skip plugins that match the projectSlug we want to remove
-          if (cleanPlugin && cleanPlugin !== '[]' && !cleanPlugin.includes(`id: '${projectSlug}'`)) {
-            tempArray.push(cleanPlugin);
-          }
-        }
-      }
-    }
-
-    // Step 2: Build clean plugins array using join()
-    const newPluginsContent = tempArray.length > 0
-      ? tempArray.join(', ')
-      : '';
-
-    // Step 3: Replace entire plugins array
-    updatedConfig = updatedConfig.replace(
-      pluginsMatch[0],
-      pluginsMatch[1] + newPluginsContent + pluginsMatch[3]
-    );
-  }
-
-  // Remove sidebar item from navbar using safe array method
   const sidebarId = generateSidebarId(projectSlug);
 
-  const navbarItemsMatch = updatedConfig.match(/(type:\s*'dropdown',\s*[\s\S]*?label:\s*'Projects',\s*[\s\S]*?items:\s*\[)([\s\S]*?)(\]\s*\})/);
-  if (navbarItemsMatch) {
-    let navbarItemsContent = navbarItemsMatch[2];
-
-    // Step 1: Extract existing items to temp array, filtering out the target
-    const tempArray = [];
-
-    if (navbarItemsContent.trim() !== '') {
-      const itemMatches = navbarItemsContent.match(/\{[\s\S]*?\},?/g);
-      if (itemMatches) {
-        for (const item of itemMatches) {
-          const cleanItem = item.replace(/,$/, '').trim();
-          // Skip items that match the sidebarId we want to remove
-          if (cleanItem && cleanItem !== '{}' && !cleanItem.includes(`sidebarId: '${sidebarId}'`)) {
-            tempArray.push(cleanItem);
-          }
-        }
-      }
-    }
-
-    // Step 2: Build clean items array content using join()
-    const newNavbarContent = tempArray.length > 0
-      ? '\n              ' + tempArray.join(',\n              ') + '\n            '
-      : '\n            ';
-
-    // Step 3: Replace entire items array
-    updatedConfig = updatedConfig.replace(
-      navbarItemsMatch[0],
-      navbarItemsMatch[1] + newNavbarContent + navbarItemsMatch[3]
-    );
+  // Read and parse the current config file
+  const configContent = fs.readFileSync(configPath, 'utf8');
+  
+  // Extract plugins and navbarItems arrays using regex
+  const pluginsMatch = configContent.match(/const plugins = (\[[\s\S]*?\]);/);
+  const navbarItemsMatch = configContent.match(/const navbarItems = (\[[\s\S]*?\]);/);
+  
+  if (!pluginsMatch || !navbarItemsMatch) {
+    throw new Error('Could not parse plugins or navbarItems from config file');
   }
+  
+  // Parse the arrays (safely evaluate the JavaScript arrays)
+  const currentPlugins = eval(pluginsMatch[1]);
+  const currentNavbarItems = eval(navbarItemsMatch[1]);
 
-  // Fix empty plugins array if all plugins were removed
-  updatedConfig = updatedConfig.replace(/plugins:\s*\[\s*\]/g, 'plugins: []');
-  // Remove any syntax errors like plugins: [], [remaining_plugins]
-  updatedConfig = updatedConfig.replace(/plugins:\s*\[\s*\],\s*\[/g, 'plugins: [[');
-  updatedConfig = updatedConfig.replace(/,(\s*\]\s*\n\s*\}\s*,\s*\n\s*\{.*?to:\s*'\/blog')/g, '$1');
+  // Remove plugin from plugins array
+  const filteredPlugins = currentPlugins.filter(plugin => 
+    !(plugin[1] && plugin[1].id === projectSlug)
+  );
 
-  fs.writeFileSync(configPath, updatedConfig, 'utf8');
+  // Remove navbar item from navbarItems array
+  const filteredNavbarItems = currentNavbarItems.filter(item => 
+    item.sidebarId !== sidebarId
+  );
+
+  // Generate new configs.js content
+  const newConfigContent = `const plugins = ${JSON.stringify(filteredPlugins, null, 4).replace(/"/g, "'")};
+
+const navbarItems = ${JSON.stringify(filteredNavbarItems, null, 4).replace(/"/g, "'")};
+
+export {
+    plugins,
+    navbarItems,
+}`;
+
+  fs.writeFileSync(configPath, newConfigContent, 'utf8');
   console.log(`Removed ${projectSlug} from Docusaurus config`);
 
   // Remove sidebar file
@@ -320,52 +213,223 @@ router.post('/create-project', async (req, res) => {
       });
     }
 
-    // Path to the initialization script (now in backend/scripts)
-    const scriptPath = path.join(__dirname, '../scripts/initialize-project.sh');
-
-    // Build command string with proper escaping
-    const escapedArgs = [
-      `"${projectTitle.replace(/"/g, '\\"')}"`,
-      `"${repositoryUrl.replace(/"/g, '\\"')}"`,
-      branchName || 'master',
-      description ? `"${description.replace(/"/g, '\\"')}"` : `"Brief description of ${projectTitle}"`
-    ];
-
-    const command = `bash "${scriptPath}" ${escapedArgs.join(' ')}`;
-
-    console.log(`[${new Date().toISOString()}] Executing: ${command}`);
-
-    const output = execSync(command, {
-      encoding: 'utf-8',
-      cwd: path.join(__dirname, '..'), // Set working directory to backend root
-      timeout: 120000, // 2 minute timeout
-      maxBuffer: 1024 * 1024, // 1MB buffer for output
-      shell: true // Use shell to execute the command
-    });
-
-    console.log(`[${new Date().toISOString()}] Script output:`, output);
-    console.log(`[${new Date().toISOString()}] Project created successfully: ${projectTitle}`);
-
-    // Update Docusaurus config after successful project creation
+    // Get git username for creator field
+    let creator;
     try {
-      await updateDocusaurusConfig(projectTitle);
-      console.log(`[${new Date().toISOString()}] Updated Docusaurus config for: ${projectTitle}`);
-    } catch (configError) {
-      console.error(`[${new Date().toISOString()}] Warning: Failed to update Docusaurus config:`, configError.message);
-      // Don't fail the entire operation if config update fails
+      creator = execSync('git config --global user.name', { encoding: 'utf-8' }).trim();
+    } catch {
+      try {
+        creator = execSync('whoami', { encoding: 'utf-8' }).trim();
+      } catch {
+        creator = 'Unknown';
+      }
     }
 
-    return res.status(200).json({
-      success: true,
-      message: 'Project created successfully',
-      data: {
-        projectTitle,
-        repositoryUrl,
-        branchName: branchName || 'master',
-        description: description || `Brief description of ${projectTitle}`
-      },
-      output: output ? output.toString().trim() : ''
+    const projectSlug = generateSlug(projectTitle);
+
+    // Create project record in database first
+    const project = await Project.create({
+      title: projectTitle,
+      repository_url: repositoryUrl,
+      branch_name: branchName || 'main',
+      description: description || `Brief description of ${projectTitle}`,
+      creator: creator
     });
+
+    // Define paths
+    const repositoriesPath = path.join(__dirname, '../../repositories');
+    const docupilotPath = path.join(__dirname, '../../docupilot');
+    const templatesPath = path.join(__dirname, '../../templates');
+    const repoPath = path.join(repositoriesPath, projectSlug);
+    const docPath = path.join(docupilotPath, projectSlug);
+
+    console.log(`[${new Date().toISOString()}] Creating project: ${projectTitle}`);
+    console.log(`[${new Date().toISOString()}] Repository path: ${repoPath}`);
+    console.log(`[${new Date().toISOString()}] Documentation path: ${docPath}`);
+
+    // Create directories if they don't exist
+    if (!fs.existsSync(repositoriesPath)) {
+      fs.mkdirSync(repositoriesPath, { recursive: true });
+    }
+    if (!fs.existsSync(docupilotPath)) {
+      fs.mkdirSync(docupilotPath, { recursive: true });
+    }
+
+    // Check if project already exists
+    if (fs.existsSync(repoPath) || fs.existsSync(docPath)) {
+      await project.delete(true); // Clean up database record
+      throw new Error('Project workspace already exists');
+    }
+
+    let output = '';
+    try {
+      // Clone repository
+      output += `Creating project workspace: ${projectTitle}\n`;
+      output += `Project slug: ${projectSlug}\n`;
+      output += `Cloning repository...\n`;
+
+      const cloneCommand = `git clone "${repositoryUrl}" "${repoPath}"`;
+      if (branchName && branchName !== 'main' && branchName !== 'master') {
+        const branchCommand = `git clone -b "${branchName}" "${repositoryUrl}" "${repoPath}"`;
+        execSync(branchCommand, { 
+          encoding: 'utf-8', 
+          timeout: 120000,
+          maxBuffer: 1024 * 1024
+        });
+      } else {
+        execSync(cloneCommand, { 
+          encoding: 'utf-8', 
+          timeout: 120000,
+          maxBuffer: 1024 * 1024
+        });
+      }
+      
+      output += `Repository cloned successfully\n`;
+
+      // Create documentation directory first
+      fs.mkdirSync(docPath, { recursive: true });
+      output += `Created documentation directory\n`;
+
+      // Run gitingest on the cloned repository
+      output += `Running gitingest analysis...\n`;
+      try {
+        // Base exclusion patterns for iOS/Android native files, common build folders
+        const baseExclusions = [
+          '*.xcodeproj',
+          '*.xcworkspace', 
+          '*.pbxproj',
+          '*.storyboard',
+          '*.xib',
+          'android/*',
+          'ios/*',
+          'node_modules/*',
+          'dist/*',
+          'build/*',
+          '.git/*',
+          '*.framework',
+          '*.app',
+          '*.ipa',
+          '*.apk',
+          'DerivedData/*',
+          'Pods/*'
+        ];
+        
+        // Read .gitignore if it exists and add those exclusions
+        const gitignorePath = path.join(repoPath, '.gitignore');
+        let gitignorePatterns = [];
+        if (fs.existsSync(gitignorePath)) {
+          const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
+          gitignorePatterns = gitignoreContent
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line && !line.startsWith('#') && !line.startsWith('!'));
+        }
+
+        // Combine all exclusion patterns
+        const allExclusions = [...baseExclusions, ...gitignorePatterns];
+        const exclusionFlags = allExclusions.map(pattern => `-e "${pattern}"`).join(' ');
+        
+        const fullCommand = `gitingest . ${exclusionFlags}`;
+        
+        execSync(fullCommand, { 
+          encoding: 'utf-8', 
+          cwd: repoPath,
+          timeout: 60000, // 1 minute timeout
+          maxBuffer: 10 * 1024 * 1024 // 10MB buffer
+        });
+        
+        output += `Gitingest analysis completed\n`;
+        
+        // Move digest.txt to docupilot directory and clean up repository
+        const digestPath = path.join(repoPath, 'digest.txt');
+        if (fs.existsSync(digestPath)) {
+          const docDigestPath = path.join(docPath, 'digest.txt');
+          fs.copyFileSync(digestPath, docDigestPath);
+          output += `Repository digest moved to documentation: digest.txt\n`;
+          
+          // Clean up the cloned repository - we only needed it for gitingest
+          fs.rmSync(repoPath, { recursive: true, force: true });
+          output += `Cleaned up temporary repository files\n`;
+        } else {
+          output += `Warning: Gitingest digest file not found\n`;
+          // Still clean up repository even if digest wasn't found
+          fs.rmSync(repoPath, { recursive: true, force: true });
+          output += `Cleaned up temporary repository files\n`;
+        }
+        
+      } catch (gitingestError) {
+        console.warn(`[${new Date().toISOString()}] Warning: Gitingest failed:`, gitingestError.message);
+        output += `Warning: Repository analysis failed - ${gitingestError.message}\n`;
+        
+        // Clean up repository even if gitingest failed
+        if (fs.existsSync(repoPath)) {
+          fs.rmSync(repoPath, { recursive: true, force: true });
+          output += `Cleaned up temporary repository files\n`;
+        }
+        // Don't fail the entire operation if gitingest fails
+      }
+
+      // Copy templates (directory already created above)
+
+      // Copy template files
+      if (fs.existsSync(templatesPath)) {
+        // Copy all files from templates directory
+        const copyFiles = (src, dest) => {
+          const entries = fs.readdirSync(src, { withFileTypes: true });
+          for (const entry of entries) {
+            const srcPath = path.join(src, entry.name);
+            const destPath = path.join(dest, entry.name);
+            if (entry.isDirectory()) {
+              fs.mkdirSync(destPath, { recursive: true });
+              copyFiles(srcPath, destPath);
+            } else {
+              let content = fs.readFileSync(srcPath, 'utf8');
+              // Replace placeholders in template files
+              content = content.replace(/__PROJECT_TITLE__/g, projectTitle);
+              content = content.replace(/__PROJECT_DESCRIPTION__/g, description || `Brief description of ${projectTitle}`);
+              content = content.replace(/__SIDEBAR_ID__/g, generateSidebarId(projectSlug));
+              fs.writeFileSync(destPath, content, 'utf8');
+            }
+          }
+        };
+        
+        copyFiles(templatesPath, docPath);
+        output += `Template files copied and configured\n`;
+      }
+
+      console.log(`[${new Date().toISOString()}] Project created successfully: ${projectTitle}`);
+
+      // Update project status in database
+      await project.syncFilesystemStatus();
+
+      // Update Docusaurus config after successful project creation
+      try {
+        await updateDocusaurusConfig(projectTitle, description || `Brief description of ${projectTitle}`);
+        console.log(`[${new Date().toISOString()}] Updated Docusaurus config for: ${projectTitle}`);
+      } catch (configError) {
+        console.error(`[${new Date().toISOString()}] Warning: Failed to update Docusaurus config:`, configError.message);
+        // Don't fail the entire operation if config update fails
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Project created successfully',
+        data: project.toJSON(),
+        output: output ? output.toString().trim() : ''
+      });
+
+    } catch (cloneError) {
+      // If git clone fails, clean up any created directories and database record
+      // Note: Repository might already be cleaned up by gitingest process
+      if (fs.existsSync(repoPath)) {
+        fs.rmSync(repoPath, { recursive: true, force: true });
+      }
+      if (fs.existsSync(docPath)) {
+        fs.rmSync(docPath, { recursive: true, force: true });
+      }
+      await project.delete(true); // Hard delete
+      throw cloneError; // Re-throw to be caught by outer catch block
+    }
 
   } catch (error) {
     console.error(`[${new Date().toISOString()}] Error creating project:`, error);
@@ -379,13 +443,16 @@ router.post('/create-project', async (req, res) => {
     const stdout = error.stdout?.toString() || '';
     const stderr = error.stderr?.toString() || '';
 
-    if (stdout.includes('Project workspace already exists')) {
+    if (error.message.includes('already exists')) {
       errorMessage = 'A project with this title already exists. Please choose a different project title or delete the existing project first.';
       statusCode = 409; // Conflict
-    } else if (stderr.includes('not a valid repository name') || stderr.includes('fatal: remote error')) {
-      errorMessage = 'Invalid repository URL. Please check that the repository exists and you have access to it.';
+    } else if (stdout.includes('Project workspace already exists')) {
+      errorMessage = 'A project with this title already exists. Please choose a different project title or delete the existing project first.';
+      statusCode = 409; // Conflict
+    } else if (stderr.includes('not a valid repository name') || stderr.includes('fatal: remote error') || stderr.includes('Repository not found')) {
+      errorMessage = 'Repository not found. Please check that the repository URL is correct and you have access to it.';
       statusCode = 400; // Bad Request
-    } else if (error.message.includes('git clone') || stderr.includes('Cloning into')) {
+    } else if (error.message.includes('git clone') || stderr.includes('Cloning into') || stderr.includes('fatal: repository')) {
       errorMessage = 'Failed to clone repository. Please check the repository URL and branch name.';
       statusCode = 400;
     } else if (error.message.includes('Permission denied')) {
@@ -404,15 +471,13 @@ router.post('/create-project', async (req, res) => {
     return res.status(statusCode).json({
       success: false,
       message: errorMessage,
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-      stdout: process.env.NODE_ENV === 'development' ? stdout : undefined,
-      stderr: process.env.NODE_ENV === 'development' ? stderr : undefined
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
 
 // Get project status/info
-router.get('/projects', (req, res) => {
+router.get('/projects', async (req, res) => {
   // Set cache control headers to prevent caching
   res.set({
     'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -421,61 +486,30 @@ router.get('/projects', (req, res) => {
   });
   
   try {
-    const repositoriesPath = path.join(__dirname, '../../repositories');
-    const docupilotPath = path.join(__dirname, '../../docupilot');
-
-    if (!fs.existsSync(repositoriesPath)) {
-      return res.json({
-        success: true,
-        message: 'No projects found',
-        projects: []
+    const { search, limit = 50, offset = 0 } = req.query;
+    
+    let projects;
+    
+    if (search) {
+      // Search projects
+      projects = await Project.search(search, { limit: parseInt(limit) });
+    } else {
+      // Get all active projects
+      projects = await Project.findAll({
+        limit: parseInt(limit),
+        offset: parseInt(offset)
       });
     }
 
-    const projects = [];
-    const projectDirs = fs.readdirSync(repositoriesPath).filter(dir => {
-      const fullPath = path.join(repositoriesPath, dir);
-      return fs.statSync(fullPath).isDirectory();
-    });
-
-    for (const projectSlug of projectDirs) {
-      const repoPath = path.join(repositoriesPath, projectSlug);
-      const docPath = path.join(docupilotPath, projectSlug);
-
-      // Try to get project info
-      let projectInfo = {
-        slug: projectSlug,
-        title: projectSlug.split('-').map(word =>
-          word.charAt(0).toUpperCase() + word.slice(1)
-        ).join(' '),
-        hasRepository: fs.existsSync(repoPath),
-        hasDocumentation: fs.existsSync(docPath),
-        createdAt: fs.statSync(repoPath).birthtime
-      };
-
-      // Try to get git info
-      try {
-        const gitConfigPath = path.join(repoPath, '.git', 'config');
-        if (fs.existsSync(gitConfigPath)) {
-          const gitConfig = fs.readFileSync(gitConfigPath, 'utf8');
-          const urlMatch = gitConfig.match(/url = (.+)/);
-          if (urlMatch) {
-            projectInfo.repositoryUrl = urlMatch[1];
-          }
-        }
-      } catch (gitError) {
-        // Git info not available
-      }
-
-      projects.push(projectInfo);
+    // Sync filesystem status for all projects
+    for (const project of projects) {
+      await project.syncFilesystemStatus();
     }
-
-    // Sort by creation date (newest first)
-    projects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.json({
       success: true,
-      projects: projects
+      projects: projects.map(p => p.toJSON()),
+      total: projects.length
     });
 
   } catch (error) {
@@ -500,44 +534,19 @@ router.delete('/projects/:projectSlug', async (req, res) => {
       });
     }
 
-    const repositoriesPath = path.join(__dirname, '../../repositories');
-    const docupilotPath = path.join(__dirname, '../../docupilot');
-    const repoPath = path.join(repositoriesPath, projectSlug);
-    const docPath = path.join(docupilotPath, projectSlug);
-
-    // Check if project exists
-    if (!fs.existsSync(repoPath) && !fs.existsSync(docPath)) {
+    // Find project in database
+    const project = await Project.findBySlug(projectSlug);
+    if (!project) {
       return res.status(404).json({
         success: false,
         message: 'Project not found'
       });
     }
 
-    // Create backup before deletion
-    // const backupsPath = path.join(__dirname, '../../backups');
-    // const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    // const backupDir = path.join(backupsPath, `${projectSlug}_deleted_${timestamp}`);
+    const docupilotPath = path.join(__dirname, '../../docupilot');
+    const docPath = path.join(docupilotPath, projectSlug);
 
-    // fs.mkdirSync(backupDir, { recursive: true });
-
-    // Backup repository if exists
-    // if (fs.existsSync(repoPath)) {
-    //   const backupRepoPath = path.join(backupDir, 'repository');
-    //   fs.renameSync(repoPath, backupRepoPath);
-    // }
-
-    // Backup documentation if exists
-    // if (fs.existsSync(docPath)) {
-    //   const backupDocPath = path.join(backupDir, 'documentation');
-    //   fs.renameSync(docPath, backupDocPath);
-    // }
-
-    // Delete repository if exists
-    if (fs.existsSync(repoPath)) {
-      fs.rmSync(repoPath, { recursive: true, force: true });
-    }
-
-    // Delete documentation if exists
+    // Delete documentation directory (repository is already cleaned up after gitingest)
     if (fs.existsSync(docPath)) {
       fs.rmSync(docPath, { recursive: true, force: true });
     }
@@ -550,10 +559,13 @@ router.delete('/projects/:projectSlug', async (req, res) => {
       // Don't fail the deletion if config update fails
     }
 
+    // Permanently delete from database (since files are already gone)
+    await project.delete(true);
+
     res.json({
       success: true,
-      message: 'Project deleted successfully'
-      // backup: backupDir
+      message: 'Project deleted successfully',
+      data: project.toJSON()
     });
 
   } catch (error) {
@@ -561,6 +573,57 @@ router.delete('/projects/:projectSlug', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to delete project',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Get single project by slug
+router.get('/projects/:projectSlug', async (req, res) => {
+  try {
+    const { projectSlug } = req.params;
+    
+    const project = await Project.findBySlug(projectSlug);
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        message: 'Project not found'
+      });
+    }
+
+    // Sync filesystem status
+    await project.syncFilesystemStatus();
+
+    res.json({
+      success: true,
+      data: project.toJSON()
+    });
+
+  } catch (error) {
+    console.error('Error fetching project:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch project',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+});
+
+// Get project statistics
+router.get('/statistics', async (req, res) => {
+  try {
+    const stats = await Project.getStatistics();
+    
+    res.json({
+      success: true,
+      data: stats
+    });
+
+  } catch (error) {
+    console.error('Error fetching statistics:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch statistics',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

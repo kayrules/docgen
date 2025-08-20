@@ -1,0 +1,26 @@
+services:
+  docgensdb:
+    image: postgres:17.2-alpine3.21
+    container_name: docgensdb
+    restart: on-failure
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=docgens
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -q -d $${POSTGRES_DB} -U $${POSTGRES_USER}']
+      start_period: 5s
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - '5432:5432'
+    volumes:
+      - docgens-data:/var/lib/postgresql/data
+    networks:
+      - docgens-network
+networks:
+  docgens-network:
+volumes:
+  docgens-data:

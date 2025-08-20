@@ -5,6 +5,7 @@
 // See: https://docusaurus.io/docs/api/docusaurus-config
 
 import { themes as prismThemes } from 'prism-react-renderer';
+import { plugins, navbarItems } from './configs.js';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -77,23 +78,7 @@ const config = {
     ]
   ],
 
-  plugins: [[
-      '@docusaurus/plugin-content-docs',
-      {
-        id: 'ubeda-afb',
-        path: 'ubeda-afb',
-        routeBasePath: 'ubeda-afb',
-        sidebarPath: './ubeda-afb/sidebars.js',
-      },
-    ], [
-    '@docusaurus/plugin-content-docs',
-    {
-      id: 'tesla-rhbme',
-      path: 'tesla-rhbme',
-      routeBasePath: 'tesla-rhbme',
-      sidebarPath: './tesla-rhbme/sidebars.js',
-    },
-  ]],
+  plugins: plugins,
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -118,17 +103,7 @@ const config = {
             type: 'dropdown',
             label: 'Projects',
             position: 'left',
-            items: [{
-    type: 'docSidebar',
-    sidebarId: 'ubedaAfbSidebar',
-    label: 'UBEDA AFB',
-    docsPluginId: 'ubeda-afb',
-  }, {
-    type: 'docSidebar',
-    sidebarId: 'teslaRhbmeSidebar',
-    label: 'Tesla RHBme',
-    docsPluginId: 'tesla-rhbme',
-  }]
+            items: navbarItems,
           },
           {
             to: '/projects',

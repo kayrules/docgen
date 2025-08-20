@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const bodyParser = require('body-parser');
+const { testConnection } = require('./config/database');
 require('dotenv').config();
 
 const app = express();
@@ -46,7 +47,10 @@ app.use('*', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 DocuPilot Backend API running on port ${PORT}`);
   console.log(`📋 Health check: http://localhost:${PORT}/health`);
+  
+  // Test database connection on startup
+  await testConnection();
 });

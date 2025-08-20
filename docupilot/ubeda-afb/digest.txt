@@ -1,0 +1,646 @@
+Directory structure:
+└── ubeda-afb/
+    ├── deploy.sh
+    ├── package.json
+    ├── tsconfig.json
+    ├── webpack.config.js
+    ├── .env.example
+    └── src/
+        ├── auth.ts
+        ├── index.ts
+        ├── relay.ts
+        ├── token-exchange.ts
+        └── types.ts
+
+================================================
+FILE: deploy.sh
+================================================
+#!/bin/bash
+
+rm -rf dist
+yarn install
+yarn build
+
+if [ -f .env ]; then
+    cp .env dist/
+fi 
+
+cd dist
+# pm2 start index.js --name af-broker
+
+
+
+
+================================================
+FILE: package.json
+================================================
+{
+  "name": "nodejs",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "webpack --mode production",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "package": "pkg ."
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "body-parser": "^1.20.3",
+    "busboy": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-fileupload": "^1.5.1",
+    "form-data": "^4.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "@types/busboy": "^1.5.4",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.17",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.10.2",
+    "copy-webpack-plugin": "^11.0.0",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.2.2",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-node-externals": "^3.0.0"
+  },
+  "bin": "dist/index.js",
+  "pkg": {
+    "scripts": "dist/**/*.js",
+    "targets": [
+      "node16-linux-x64",
+      "node16-macos-x64",
+      "node16-win-x64"
+    ],
+    "outputPath": "executable"
+  }
+}
+
+
+
+================================================
+FILE: tsconfig.json
+================================================
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "commonjs",
+    "lib": [
+      "es2017",
+      "es7",
+      "es6"
+    ],
+    "declaration": true,
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
+
+
+================================================
+FILE: webpack.config.js
+================================================
+const path = require("path");
+const webpack = require("webpack");
+const dotenv = require("dotenv");
+
+// Load environment variables
+const env = dotenv.config().parsed || {};
+
+// Convert env variables to proper format for webpack
+const envKeys = Object.keys(env).reduce((prev, next) => {
+  prev[`process.env.${next}`] = JSON.stringify(env[next]);
+  return prev;
+}, {});
+
+module.exports = {
+  entry: "./src/index.ts",
+  target: "node",
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        use: {
+          loader: "ts-loader",
+          options: {
+            compilerOptions: {
+              declaration: false,
+            },
+          },
+        },
+        exclude: /node_modules/,
+      },
+    ],
+  },
+  resolve: {
+    extensions: [".tsx", ".ts", ".js"],
+  },
+  output: {
+    filename: "index.js",
+    path: path.resolve(__dirname, "dist"),
+    clean: true,
+  },
+  optimization: {
+    minimize: false,
+  },
+  plugins: [new webpack.DefinePlugin(envKeys)],
+  ignoreWarnings: [
+    {
+      module: /express\/lib\/view\.js$/,
+      message: /Critical dependency/,
+    },
+  ],
+};
+
+
+
+================================================
+FILE: .env.example
+================================================
+PORT=3000
+BASE_URL=https://af.domain.com
+ENCRYPTION_KEY='base64:xxx'
+AUTH_APP_NAME=
+AUTH_APP_KEY=
+AUTH_SECRET_KEY=
+ALLOWED_ORIGINS=true
+
+
+================================================
+FILE: src/auth.ts
+================================================
+import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+
+class Auth {
+    public login(req: Request, res: Response): void {
+        const { appName, appKey } = req.body;
+
+        // Dummy user validation
+        if (appName === process.env.AUTH_APP_NAME && appKey === process.env.AUTH_APP_KEY) {
+            const jwtSecret = process.env.AUTH_SECRET_KEY;
+            if (!jwtSecret) {
+                res.status(500).json({ message: 'AUTH_SECRET_KEY is not defined' });
+                return;
+            }
+            const token = jwt.sign({ appName }, jwtSecret, {
+                expiresIn: '1h',
+            });
+            res.json({ token });
+        } else {
+            res.status(401).json({ message: 'Invalid credentials' });
+        }
+    }
+}
+
+export default new Auth();
+
+
+
+================================================
+FILE: src/index.ts
+================================================
+import * as dotenv from 'dotenv';
+dotenv.config();
+
+import express, { Request, Response } from 'express';
+import bodyParser from 'body-parser';
+import cors from 'cors';
+import relay from './relay';
+import tokenExchange from './token-exchange';
+
+const app = express();
+const port = process.env.PORT ?? 3000;
+
+app.use(cors({
+  origin: process.env.ALLOWED_ORIGINS === 'true',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false,
+  exposedHeaders: ['Content-Length', 'Content-Type']
+}));
+
+app.use(bodyParser.json());
+
+app.use('/api/upload', (req: Request, res: Response) => {
+  relay.relayRequestWithFile(req, res);
+});
+
+app.use('/api', (req: Request, res: Response) => {
+  relay.relayRequest(req, res);
+});
+
+app.post('/token-exchange', (req: Request, res: Response) => {
+  tokenExchange.handleTokenExchange(req, res);
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
+
+
+================================================
+FILE: src/relay.ts
+================================================
+import { Request, Response } from 'express';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
+import * as https from 'https';
+import busboy from 'busboy';
+import FormData from 'form-data';
+
+class Relay {
+    private readonly isDevelopment = process.env.NODE_ENV === 'development';
+    private readonly baseURL = process.env.BASE_URL;
+
+    private readonly whitelistUrls = [
+        '/auth/user',
+        '/auth/user/otp',
+        '/auth/user/verified',
+        '/auth/user/sso',
+        '/auth/user',
+        '/auth/user/sso',
+        '/auth/user/token',
+        // token exchange
+        '/token-exchange',
+        // auto finance
+        '/auto-financing-applications',
+        '/auto-financing-applications/*/otp',
+        '/auto-financing-applications/*/verified',
+        '/auto-financing-applications/*',
+        '/auto-financing-applications/*/documents',
+        '/auto-financing-applications/*/submitted',
+        // picklist
+        '/auto-financing-picklists/nationality/items',
+        '/auto-financing-picklists/primary-id-type/items',
+        '/auto-financing-picklists/race/items',
+        '/auto-financing-picklists/role/items',
+        '/auto-financing-picklists/vehicle-condition/items',
+        '/auto-financing-picklists/vehicle-usage/items',
+        '/auto-financing-picklists/state/items',
+        '/auto-financing-picklists/branch/items',
+        '/auto-financing-picklists/model-of-vehicle/items',
+        // products
+        '/auto-financing-products',
+        // systems
+        '/settings',
+        // others
+        '/applications',
+    ];
+
+    constructor() {
+        console.log('Environment variables:', {
+            BASE_URL: process.env.BASE_URL,
+            PORT: process.env.PORT
+        });
+    }
+
+    private getHttpsAgent() {
+        return this.isDevelopment ? new https.Agent({ rejectUnauthorized: false }) : undefined;
+    }
+
+    private handleResponse(response: AxiosResponse, req: Request, res: Response): void {
+        // Clone and modify response headers
+        const modifiedHeaders = { ...response.headers };
+
+        // Remove ALL CORS headers from backend response
+        [
+            'access-control-allow-methods',
+            'access-control-allow-origin',
+            'access-control-allow-headers',
+            'access-control-allow-credentials',
+            'access-control-expose-headers',
+            'access-control-max-age'
+        ].forEach(header => delete modifiedHeaders[header.toLowerCase()]);
+
+        // Set modified headers
+        res.status(response.status).set(modifiedHeaders);
+
+        res.send(response.data);
+    }
+
+    private handleError(error: unknown, res: Response, context: string): void {
+        if (axios.isAxiosError(error) && error.response) {
+            console.error(`Error in ${context}:`, error.message, error.response.data);
+            res.status(error.response.status).set(error.response.headers).send(error.response.data);
+        } else {
+            console.error(`Unexpected error in ${context}:`, error);
+            res.status(500).json({ message: 'Error forwarding request' });
+        }
+    }
+
+    private validateBaseUrl(res: Response): boolean {
+        if (!this.baseURL) {
+            res.status(500).json({ message: 'BASE_URL is not defined in environment variables' });
+            return false;
+        }
+        return true;
+    }
+
+    private getTargetUrl(req: Request, isFileUpload: boolean = false): string {
+        // Get the request path without modifying it for whitelist check
+        const requestPath = req.url;
+
+        // Check if the path matches any of our whitelist patterns
+        const isWhitelisted = this.isPathWhitelisted(requestPath);
+
+        if (!isWhitelisted) {
+            console.log(`Path not whitelisted: ${requestPath}`);
+            // Return a safe default URL that will be validated later
+            return `${this.baseURL}/api/not-found`;
+        }
+
+        // Construct the final URL
+        // For file uploads, add the /upload prefix to the backend path
+        let apiPath = requestPath;
+        if (isFileUpload) {
+            // Add /upload prefix for file upload endpoints
+            apiPath = `/upload${requestPath}`;
+        }
+
+        const finalUrl = `${this.baseURL}/api${apiPath}`;
+        console.log('finalUrl', finalUrl);
+        return finalUrl;
+    }
+
+    // Helper method to check if a path matches any whitelist pattern
+    private isPathWhitelisted(path: string): boolean {
+        return this.whitelistUrls.some(pattern => this.matchesPattern(path, pattern));
+    }
+
+    // Helper method to match a path against a pattern with wildcards
+    private matchesPattern(path: string, pattern: string): boolean {
+        // If the pattern is exact (no wildcards), do a direct comparison
+        if (!pattern.includes('*')) {
+            return path === pattern;
+        }
+
+        // Convert the pattern to a regex
+        // Replace * with a regex pattern that matches any segment except /
+        const regexPattern = pattern
+            .replace(/\//g, '\\/') // Escape forward slashes
+            .replace(/\*/g, '([^\\/]+)'); // Replace * with a capture group that matches anything except /
+
+        const regex = new RegExp(`^${regexPattern}$`);
+        return regex.test(path);
+    }
+
+    // Method to safely extract and validate the authorization token
+    private getValidatedAuthHeader(req: Request): string | null {
+        // Check if authorization header exists
+        if (!req.headers.authorization) {
+            return null;
+        }
+
+        const authHeader = req.headers.authorization;
+
+        // Validate that it's a Bearer token with proper format
+        if (!authHeader.startsWith('Bearer ')) {
+            return null;
+        }
+
+        // Extract the token
+        const token = authHeader.substring(7).trim();
+
+        // Basic validation: ensure token is not empty and has reasonable length
+        if (!token || token.length < 10 || token.length > 2000) {
+            return null;
+        }
+
+        // Validate token format (typically JWT tokens are base64url encoded strings with dots)
+        // This is a basic check - adjust based on your token format
+        const tokenRegex = /^[A-Za-z0-9_\-\.]+$/;
+        if (!tokenRegex.test(token)) {
+            return null;
+        }
+
+        // Return the validated token with Bearer prefix
+        return `Bearer ${token}`;
+    }
+
+    public async relayRequest(req: Request, res: Response): Promise<void> {
+        if (!this.validateBaseUrl(res)) return;
+
+        const config: AxiosRequestConfig = {
+            method: req.method,
+            url: this.getTargetUrl(req),
+            data: req.body,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            httpsAgent: this.getHttpsAgent(),
+            maxBodyLength: Infinity,
+            maxContentLength: Infinity,
+        };
+
+        // Add validated authorization header if present
+        const validatedAuthHeader = this.getValidatedAuthHeader(req);
+        if (validatedAuthHeader && config.headers) {
+            config.headers['authorization'] = validatedAuthHeader;
+        }
+
+        try {
+            const response = await axios(config);
+            this.handleResponse(response, req, res);
+        } catch (error) {
+            this.handleError(error, res, 'relayRequest');
+        }
+    }
+
+    public async relayRequestWithFile(req: Request, res: Response): Promise<void> {
+        if (!this.validateBaseUrl(res)) return;
+
+        try {
+            const bb = busboy({ headers: req.headers });
+            let fileData: Buffer | null = null;
+            let fileName: string | null = null;
+
+            bb.on('file', (name: string, file: NodeJS.ReadableStream, info: busboy.FileInfo) => {
+                const chunks: Buffer[] = [];
+                fileName = info.filename;
+
+                file.on('data', (data: Buffer) => chunks.push(data));
+                file.on('end', () => fileData = Buffer.concat(chunks));
+            });
+
+            bb.on('finish', async () => {
+                if (!fileData || !fileName) {
+                    return res.status(400).json({ error: 'No file uploaded' });
+                }
+
+                const formData = new FormData();
+                formData.append('file', fileData, fileName);
+
+                const config: AxiosRequestConfig = {
+                    method: req.method,
+                    url: this.getTargetUrl(req, true),
+                    data: formData,
+                    headers: {
+                        ...formData.getHeaders(),
+                        'Accept': 'application/json',
+                    },
+                    httpsAgent: this.getHttpsAgent(),
+                    maxBodyLength: Infinity,
+                    maxContentLength: Infinity,
+                };
+
+                // Add validated authorization header if present
+                const validatedAuthHeader = this.getValidatedAuthHeader(req);
+                if (validatedAuthHeader && config.headers) {
+                    config.headers['Authorization'] = validatedAuthHeader;
+                }
+
+                try {
+                    const response = await axios(config);
+                    this.handleResponse(response, req, res);
+                } catch (error) {
+                    this.handleError(error, res, 'relayRequestWithFile');
+                }
+            });
+
+            req.pipe(bb);
+        } catch (error) {
+            console.error('File handling error:', error);
+            res.status(500).json({
+                message: 'Error processing file upload',
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
+    }
+}
+
+export default new Relay();
+
+
+
+================================================
+FILE: src/token-exchange.ts
+================================================
+import { Request, Response } from 'express';
+import * as crypto from 'crypto';
+import axios from 'axios';
+import * as https from 'https';
+
+interface TokenPayload {
+    payload: string;
+    type: 'decrypt';
+}
+
+class TokenExchange {
+    private readonly isDevelopment = process.env.NODE_ENV === 'development';
+
+    public async handleTokenExchange(req: Request, res: Response): Promise<void> {
+        try {
+            this.validateEnvironment();
+            const payload = req.body as TokenPayload;
+
+            if (payload.type !== 'decrypt') {
+                throw new Error('Only decrypt operation is supported');
+            }
+
+            const decryptedResult = this.decrypt(payload.payload);
+
+            // Make the additional API call
+            try {
+                const apiResponse = await axios.post(
+                    `${process.env.BASE_URL}/api/auth/user/sso`,
+                    { token: decryptedResult },
+                    {
+                        headers: { 'Content-Type': 'application/json' },
+                        httpsAgent: this.getHttpsAgent()
+                    }
+                );
+
+                // Send combined response
+                res.status(200).json({
+                    ...apiResponse.data
+                });
+            } catch (apiError: any) {
+                console.error('SSO API call error:', apiError.response?.data || apiError.message);
+                res.status(apiError.response?.status || 500).json({
+                    error: 'Error calling SSO endpoint',
+                    details: apiError.response?.data || apiError.message
+                });
+            }
+        } catch (error) {
+            console.error('Token exchange error:', error);
+            res.status(500).json({ error: 'Error processing token' });
+        }
+    }
+
+    private validateEnvironment(): void {
+        if (!process.env.ENCRYPTION_KEY) {
+            throw new Error('ENCRYPTION_KEY is not defined');
+        }
+        if (!process.env.BASE_URL) {
+            throw new Error('BASE_URL is not defined');
+        }
+    }
+
+    private decrypt(encryptedValue: string): string {
+        try {
+            const key = process.env.ENCRYPTION_KEY!;
+            // Remove 'base64:' prefix if present
+            const cleanKey = key.replace('base64:', '');
+
+            const keyBytes = Buffer.from(cleanKey, 'base64');
+
+            const json = JSON.parse(Buffer.from(encryptedValue, 'base64').toString('utf8'));
+
+            const iv = Buffer.from(json.iv, 'base64');
+            const value = Buffer.from(json.value, 'base64');
+
+            // Decrypt
+            const decipher = crypto.createDecipheriv('aes-256-cbc', keyBytes, iv);
+            let decrypted = decipher.update(value);
+            decrypted = Buffer.concat([decrypted, decipher.final()]);
+
+            // Convert to string and try to parse as JSON
+            const decryptedString = decrypted.toString('utf8');
+            try {
+                return JSON.parse(decryptedString);
+            } catch {
+                return decryptedString;
+            }
+        } catch (error: any) {
+            throw new Error(`Decryption failed: ${error.message}`);
+        }
+    }
+
+    private getHttpsAgent() {
+        return this.isDevelopment ? new https.Agent({ rejectUnauthorized: false }) : undefined;
+    }
+}
+
+export default new TokenExchange();
+
+
+================================================
+FILE: src/types.ts
+================================================
+import { Request } from 'express';
+
+export interface RequestWithFile extends Request {
+    file?: Express.Multer.File;
+} 
+
