@@ -1,0 +1,78 @@
+.fab {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #ffcc70;
+  border: none;
+  border-radius: 30px;
+  padding: 10px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: background 0.2s;
+}
+.fab:hover {
+  background: #ffb84d;
+}
+
+.chatbox {
+  position: fixed;
+  bottom: 70px;
+  right: 20px;
+  width: 320px;
+  height: 400px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.chatHeader {
+  background: #ffcc70;
+  padding: 10px;
+  font-weight: bold;
+  text-align: center;
+}
+
+.chatMessages {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.userMessage {
+  text-align: right;
+  margin-bottom: 8px;
+  background: #dcf8c6;
+  padding: 6px 10px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.assistantMessage {
+  text-align: left;
+  margin-bottom: 8px;
+  background: #f1f0f0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.chatInput {
+  display: flex;
+  border-top: 1px solid #ddd;
+}
+.chatInput input {
+  flex: 1;
+  border: none;
+  padding: 8px;
+}
+.chatInput button {
+  border: none;
+  background: #ffcc70;
+  padding: 8px 12px;
+  cursor: pointer;
+}

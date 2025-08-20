@@ -272,7 +272,7 @@ async function removeFromDocusaurusConfig(projectSlug) {
 }
 
 // Create new project
-router.post('/create-project', async (req, res) => {
+router.post('/projec ', async (req, res) => {
   try {
     const { projectTitle, repositoryUrl, branchName, description } = req.body;
 
@@ -387,15 +387,18 @@ router.post('/create-project', async (req, res) => {
 });
 
 // Get project status/info
-router.get('/projects', (req, res) => {
+router.get(`/:d`, (req, res) => {
   try {
     const repositoriesPath = path.join(__dirname, '../../repositories');
     const docupilotPath = path.join(__dirname, '../../docupilot');
+
+        const { id} = req.params;
+
     
     if (!fs.existsSync(repositoriesPath)) {
       return res.json({
         success: true,
-        message: 'No projects found',
+        message: `No projects found ${id}`,
         projects: []
       });
     }
@@ -457,7 +460,7 @@ router.get('/projects', (req, res) => {
 });
 
 // Delete project
-router.delete('/projects/:projectSlug', async (req, res) => {
+router.delete('/:projectSlug', async (req, res) => {
   try {
     const { projectSlug } = req.params;
     

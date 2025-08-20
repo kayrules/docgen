@@ -1,40 +1,41 @@
 import clsx from 'clsx';
 import Heading from '@theme/Heading';
 import styles from './styles.module.css';
+//import DocsAssistant from './DocsAssistant.js';
 
 const FeatureList = [
   {
-    title: 'Frontend Development',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+    title: 'Read online repo to generate document',
+    Svg: require('@site/static/img/undraw_online-organizer_1kdy.svg').default,
     description: (
       <>
-        Comprehensive frontend documentation covering React components, styling guides,
-        and performance best practices for modern web applications.
+        Automatically reads an online code repository and generates documentation based on the code it finds. 
+        It's great for quickly creating initial project documentation without manual effort.
       </>
     ),
-    link: '/ubeda-afb/',
+    link: '/frontend/intro',
   },
   {
-    title: 'Backend Services',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    title: 'Step-by-step code explanation',
+    Svg: require('@site/static/img/undraw_road-to-knowledge_f9zn.svg').default,
     description: (
       <>
-        Backend development guides including API design, database management,
-        authentication, and microservices architecture.
+        Provides a detailed, line-by-line breakdown of a code snippet or function. 
+        It's useful for understanding complex logic, debugging, or learning a new language or framework by seeing how each part works together.
       </>
     ),
-    link: '/ubeda-afb/',
+    link: '/backend/intro',
   },
   {
-    title: 'API Reference',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    title: 'Custom prompt-based documentation',
+    Svg: require('@site/static/img/undraw_booking_1ztt.svg').default,
     description: (
       <>
-        Complete API documentation with endpoints, authentication, SDKs,
-        and integration examples for developers.
+        Allows you to generate documentation tailored to a specific request or prompt. 
+        Instead of creating a standard document, you can ask for things like a "quick start guide," a "technical overview for senior developers," or an "API reference," and the system will create it for you.
       </>
     ),
-    link: '/ubeda-afb/',
+    link: '/api/intro',
   },
 ];
 
@@ -112,3 +113,28 @@ export default function HomepageFeatures() {
     </>
   );
 }
+
+// ADD CODE BELOW TO ADD DOCS ASSISTANT BUTTONA
+// 
+//           <div className="row" style={{ marginTop: '2rem' }}>
+//             <div className="col col--6 col--offset-3">
+//               <div className="text--center">
+//                 <Heading as="h3">Getting Started</Heading>
+//                 <p>
+//                   New to the platform? Start with our comprehensive tutorials
+//                   to get up and running quickly.
+//                 </p>
+//                 <a
+//                   className="button button--outline button--secondary"
+//                   href="/tutorials/intro">
+//                   View Tutorials →
+//                 </a>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </section>
+//       <DocsAssistant />
+//     </>
+//   );
+// }
