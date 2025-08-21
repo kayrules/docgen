@@ -27,7 +27,7 @@ export default function NewProject() {
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:3001/api/project', {
+      const response = await fetch('http://localhost:3001/api/project/create-project', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -38,7 +38,7 @@ export default function NewProject() {
       const result = await response.json();
 
       if (result.success) {
-        setMessage('✅ Project created successfully! Redirecting to projects list...');
+        setMessage('✅ Project created successfully!');
         // Reset form
         setFormData({
           projectTitle: '',
@@ -47,10 +47,10 @@ export default function NewProject() {
           description: ''
         });
 
-        // Redirect to projects list page
+        // Redirect to projects list page immediately
         setTimeout(() => {
           window.location.href = '/projects';
-        }, 1500); // Give user time to see success message
+        }, 1500); // Brief delay to show success message
       } else {
         setMessage(`❌ Error: ${result.message}`);
       }
@@ -67,20 +67,18 @@ export default function NewProject() {
       title="New Project"
       description="Create a new project documentation">
       <div style={{
-      < div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '60vh',
-          padding: '2rem'
-        }}>
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '60vh',
+        padding: '2rem'
+      }}>
         <div style={{ maxWidth: '600px', width: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             <Heading as="h1">Create New Project</Heading>
             <p style={{ fontSize: '16px', color: 'var(--ifm-color-emphasis-700)' }}>
-              <p style={{ fontSize: '16px', color: 'var(--ifm-color-emphasis-700)' }}>
-                Fill in the details below to create a new project documentation.
-              </p>
+              Fill in the details below to create a new project documentation.
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} style={{
@@ -109,10 +107,8 @@ export default function NewProject() {
                 style={{
                   width: '100%',
                   padding: '0.5rem',
-                  padding: '0.5rem',
                   borderRadius: '4px',
                   border: '1px solid var(--ifm-color-emphasis-300)',
-                  fontSize: '14px',
                   fontSize: '14px',
                   backgroundColor: 'white'
                 }}
@@ -139,10 +135,8 @@ export default function NewProject() {
                 style={{
                   width: '100%',
                   padding: '0.5rem',
-                  padding: '0.5rem',
                   borderRadius: '4px',
                   border: '1px solid var(--ifm-color-emphasis-300)',
-                  fontSize: '14px',
                   fontSize: '14px',
                   backgroundColor: 'white'
                 }}
@@ -168,10 +162,8 @@ export default function NewProject() {
                 style={{
                   width: '100%',
                   padding: '0.5rem',
-                  padding: '0.5rem',
                   borderRadius: '4px',
                   border: '1px solid var(--ifm-color-emphasis-300)',
-                  fontSize: '14px',
                   fontSize: '14px',
                   backgroundColor: 'white'
                 }}
@@ -197,10 +189,8 @@ export default function NewProject() {
                 style={{
                   width: '100%',
                   padding: '0.5rem',
-                  padding: '0.5rem',
                   borderRadius: '4px',
                   border: '1px solid var(--ifm-color-emphasis-300)',
-                  fontSize: '14px',
                   fontSize: '14px',
                   backgroundColor: 'white',
                   resize: 'vertical'
@@ -227,7 +217,6 @@ export default function NewProject() {
                 type="submit"
                 disabled={isLoading}
                 className="button button--primary"
-                className="button button--primary"
                 style={{
                   opacity: isLoading ? 0.6 : 1,
                   cursor: isLoading ? 'not-allowed' : 'pointer',
@@ -237,16 +226,12 @@ export default function NewProject() {
                 {isLoading ? 'Creating Project...' : 'Create Project'}
               </button>
               <a
-              <a
                 href="/projects"
-                className="button button--secondary"
                 className="button button--secondary"
                 style={{
                   textDecoration: 'none'
-                  textDecoration: 'none'
                 }}
               >
-                Manage Projects
                 Manage Projects
               </a>
             </div>

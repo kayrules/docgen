@@ -1,5 +1,5 @@
 const express = require('express');
-const { execSync } = require('child_process');
+const { execSync, spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const Project = require('../models/Project');
@@ -124,6 +124,42 @@ export default sidebars;
   fs.writeFileSync(sidebarPath, sidebarContent, 'utf8');
 }
 
+// Helper function to restart only Docusaurus frontend service
+async function restartDocusaurus() {
+  try {
+    const docupilotPath = path.join(__dirname, '../../docupilot');
+    
+    // Kill only Docusaurus processes on port 3000 (not backend)
+    try {
+      execSync('lsof -ti:3000 | xargs kill -9', { encoding: 'utf-8', timeout: 5000 });
+      console.log('Stopped existing Docusaurus frontend process');
+    } catch (killError) {
+      // No process to kill, or kill failed - continue anyway
+    }
+    
+    // Wait for port to be free
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Start the rebuild and restart process in background - don't wait for completion
+    console.log('Starting Docusaurus rebuild and restart in background...');
+    
+    // Use spawn instead of execSync to avoid blocking and killing the process
+    const restartProcess = spawn('bash', ['-c', 'npm run build && npm run serve'], {
+      cwd: docupilotPath,
+      detached: true,
+      stdio: 'ignore'
+    });
+    
+    // Don't wait for the process - let it run independently
+    restartProcess.unref();
+    
+    console.log('Docusaurus rebuild initiated (running in background)');
+  } catch (error) {
+    console.warn('Failed to restart Docusaurus frontend:', error.message);
+    // Don't throw error - this is not critical for project creation
+  }
+}
+
 // Helper function to remove project from Docusaurus config
 async function removeFromDocusaurusConfig(projectSlug) {
   const configPath = path.join(__dirname, '../../docupilot/configs.js');
@@ -190,7 +226,7 @@ export {
 }
 
 // Create new project
-router.post('/projec ', async (req, res) => {
+router.post('/create-project', async (req, res) => {
   try {
     const { projectTitle, repositoryUrl, branchName, description } = req.body;
 
@@ -523,7 +559,7 @@ router.get('/projects', async (req, res) => {
 });
 
 // Delete project
-router.delete('/:projectSlug', async (req, res) => {
+router.delete('/projects/:projectSlug', async (req, res) => {
   try {
     const { projectSlug } = req.params;
 
@@ -554,6 +590,7 @@ router.delete('/:projectSlug', async (req, res) => {
     // Remove from Docusaurus config
     try {
       await removeFromDocusaurusConfig(projectSlug);
+      console.log(`[${new Date().toISOString()}] Removed ${projectSlug} from Docusaurus config`);
     } catch (configError) {
       console.warn('Failed to remove from Docusaurus config:', configError.message);
       // Don't fail the deletion if config update fails

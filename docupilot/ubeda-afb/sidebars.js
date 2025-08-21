@@ -4,7 +4,7 @@ const sidebars = {
   ubedaAfbSidebar: [
     {
       type: 'html',
-      value: '<div style="margin-bottom: 1rem; border-bottom: 1rem solid #ccc; padding-bottom: 1rem;"><div style="font-weight: bold; color: black; text-align: left; margin-bottom: 0.5rem;">UBEDA AFB</div><div style="font-size: 14px; color: #666; text-align: left; line-height: 1.4;">Brief description of UBEDA AFB</div></div>',
+      value: '<div style="margin-bottom: 1rem; border-bottom: 1rem solid #ccc; padding-bottom: 1rem;"><div style="font-weight: bold; color: black; text-align: left; margin-bottom: 0.5rem;">UBEDA AFB</div><div style="font-size: 14px; color: #666; text-align: left; line-height: 1.4;">afb</div></div>',
       defaultStyle: true,
     },
     {

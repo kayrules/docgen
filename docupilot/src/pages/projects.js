@@ -31,7 +31,7 @@ export default function Projects() {
       setLoadingProjects(true);
       // Add timestamp to prevent caching
       const timestamp = new Date().getTime();
-      const response = await fetch(`http://localhost:3001/api/projects?_t=${timestamp}`, {
+      const response = await fetch(`http://localhost:3001/api/project/projects?_t=${timestamp}`, {
         cache: 'no-cache',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -57,19 +57,17 @@ export default function Projects() {
 
     try {
       setDeletingProject(projectSlug);
-      const response = await fetch(`http://localhost:3001/api/projects/${projectSlug}`, {
+      const response = await fetch(`http://localhost:3001/api/project/projects/${projectSlug}`, {
         method: 'DELETE'
       });
       const result = await response.json();
 
       if (result.success) {
-        setMessage('✅ Project deleted successfully! Refreshing list...');
-        // Add a longer delay to ensure backend processing is complete
-        setTimeout(() => {
-          loadProjects(); // Reload the project list
-        }, 1500);
-        // Clear message after 5 seconds
-        setTimeout(() => setMessage(''), 5000);
+        setMessage('✅ Project deleted successfully!');
+        // Reload the project list immediately
+        loadProjects();
+        // Clear message after 3 seconds
+        setTimeout(() => setMessage(''), 3000);
       } else {
         setMessage(`❌ Error deleting project: ${result.message}`);
       }

@@ -2,24 +2,6 @@ const plugins = [
     [
         '@docusaurus/plugin-content-docs',
         {
-            'id': 'ubeda-mfe',
-            'path': 'ubeda-mfe',
-            'routeBasePath': 'ubeda-mfe',
-            'sidebarPath': './ubeda-mfe/sidebars.js'
-        }
-    ],
-    [
-        '@docusaurus/plugin-content-docs',
-        {
-            'id': 'tesla-rhbme',
-            'path': 'tesla-rhbme',
-            'routeBasePath': 'tesla-rhbme',
-            'sidebarPath': './tesla-rhbme/sidebars.js'
-        }
-    ],
-    [
-        '@docusaurus/plugin-content-docs',
-        {
             'id': 'ubeda-afb',
             'path': 'ubeda-afb',
             'routeBasePath': 'ubeda-afb',
@@ -29,27 +11,15 @@ const plugins = [
     [
         '@docusaurus/plugin-content-docs',
         {
-            'id': 'try-test-2',
-            'path': 'try-test-2',
-            'routeBasePath': 'try-test-2',
-            'sidebarPath': './try-test-2/sidebars.js'
+            'id': 'try-test-1',
+            'path': 'try-test-1',
+            'routeBasePath': 'try-test-1',
+            'sidebarPath': './try-test-1/sidebars.js'
         }
     ]
 ];
 
 const navbarItems = [
-    {
-        'type': 'docSidebar',
-        'sidebarId': 'ubedaMfeSidebar',
-        'label': 'UBEDA MFE',
-        'docsPluginId': 'ubeda-mfe'
-    },
-    {
-        'type': 'docSidebar',
-        'sidebarId': 'teslaRhbmeSidebar',
-        'label': 'Tesla RHBme',
-        'docsPluginId': 'tesla-rhbme'
-    },
     {
         'type': 'docSidebar',
         'sidebarId': 'ubedaAfbSidebar',
@@ -58,9 +28,9 @@ const navbarItems = [
     },
     {
         'type': 'docSidebar',
-        'sidebarId': 'tryTest2Sidebar',
-        'label': 'TRY TEST 2',
-        'docsPluginId': 'try-test-2'
+        'sidebarId': 'tryTest1Sidebar',
+        'label': 'TRY TEST 1',
+        'docsPluginId': 'try-test-1'
     }
 ];
 
