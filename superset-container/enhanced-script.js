@@ -422,7 +422,7 @@ const ENHANCED_VOICE_STYLES = `
         background: #28a745;
         border: none;
         color: white;
-        border-radius: 50%;
+        border-radius: 4px;
         width: 40px;
         height: 40px;
         cursor: pointer;
@@ -430,39 +430,23 @@ const ENHANCED_VOICE_STYLES = `
         align-items: center;
         justify-content: center;
         font-size: 16px;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
     }
 
     .enhanced-voice-button:hover {
         background: #218838;
-        transform: scale(1.05);
     }
 
     .enhanced-voice-button.recording {
         background: #dc3545;
-        animation: recordingPulse 1s infinite;
-    }
-
-    @keyframes recordingPulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-        100% { transform: scale(1); }
     }
 
     .enhanced-voice-button:disabled {
         background: #6c757d;
         cursor: not-allowed;
-        transform: none;
     }
 
     /* Alert mode button */
-    .enhanced-alert-mode-btn {
-        background: #6c757d;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 8px 12px;
+    .enhanced-alert-mode-link {
         font-size: 12px;
         cursor: pointer;
         margin: 8px 0;
@@ -470,14 +454,16 @@ const ENHANCED_VOICE_STYLES = `
         font-weight: 600;
         width: 100%;
         font-family: Inter, Helvetica, Arial, sans-serif;
+        text-decoration: none;
+        display: block;
+        text-align: center;
     }
 
-    .enhanced-alert-mode-btn:hover {
-        background: #5a6268;
+    .enhanced-alert-mode-link:hover {
+        text-decoration: none;
     }
 
-    .enhanced-alert-mode-btn.active {
-        background: #dc3545;
+    .enhanced-alert-mode-link.active {
         animation: alertPulse 2s infinite;
     }
 
@@ -914,18 +900,24 @@ class EnhancedChatWrapper {
 
     if (!inputArea) return;
 
-    // Create alert mode button
-    const alertModeBtn = document.createElement("button");
-    alertModeBtn.className = "enhanced-alert-mode-btn";
+    // Create alert mode link (not button)
+    const alertModeBtn = document.createElement("a");
+    alertModeBtn.className = "enhanced-alert-mode-link";
     alertModeBtn.id = "enhanced-alert-mode-btn";
     alertModeBtn.textContent = "🚨 Alert Mode: OFF";
     alertModeBtn.title = "Toggle Alert Mode (Voice Only)";
+    alertModeBtn.href = "#";
+    alertModeBtn.style.textDecoration = "none";
 
     // Insert before input area
     inputArea.parentNode.insertBefore(alertModeBtn, inputArea);
 
     // Bind alert mode events
-    alertModeBtn.addEventListener("click", () => this.toggleAlertMode());
+    alertModeBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.toggleAlertMode();
+    });
   }
 
   enhanceMessageHandling(chatContainer) {
