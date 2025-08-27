@@ -60,20 +60,39 @@ app.use('/api', createProxyMiddleware({
   secure: false
 }));
 
-// Proxy n8n webhook for chat
+// Proxy n8n webhook for chat (PRODUCTION)
 app.use('/webhook', createProxyMiddleware({
   target: 'https://nodemation.kayrules.com',
   changeOrigin: true,
   secure: true,
   onError: (err, req, res) => {
-    console.error('n8n webhook proxy error:', err.message);
+    console.error('n8n webhook PRODUCTION proxy error:', err.message);
     res.status(503).json({ 
-      error: 'n8n service unavailable', 
+      error: 'n8n production service unavailable', 
       message: 'Unable to connect to nodemation.kayrules.com' 
     });
   },
   onProxyReq: (proxyReq, req, res) => {
-    console.log('Proxying webhook request to n8n:', req.path);
+    console.log('[PRODUCTION] Proxying webhook request to n8n:', req.method, req.path, 'Content-Type:', req.get('Content-Type'));
+  }
+}));
+
+// Proxy webhook-test routes (TESTING - rewrite to /webhook for n8n)
+app.use('/webhook-test', createProxyMiddleware({
+  target: 'https://nodemation.kayrules.com',  // You can change this to a different endpoint
+  changeOrigin: true,
+  secure: true,
+  onError: (err, req, res) => {
+    console.error('n8n webhook TEST proxy error:', err.message);
+    res.status(503).json({ 
+      error: 'n8n test service unavailable', 
+      message: 'Unable to connect to test endpoint' 
+    });
+  },
+  onProxyReq: (proxyReq, req, res) => {
+    console.log('req.path', req.path);
+    console.log('req.body', req.body);
+    console.log('[TEST] Proxying webhook-test request to n8n:', req.method, req.path, '-> rewritten to:', 'Content-Type:', req.get('Content-Type'));
   }
 }));
 

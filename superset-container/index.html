@@ -144,6 +144,50 @@
         background-position: center !important;
         position: relative !important;
       }
+
+      /* Enhanced features - minimal styling */
+      #n8n-chat .enhanced-voice-button {
+        background: #28a745 !important;
+        border: none !important;
+        color: white !important;
+        border-radius: 50% !important;
+        width: 36px !important;
+        height: 36px !important;
+        cursor: pointer !important;
+        font-size: 14px !important;
+        margin-left: 8px !important;
+      }
+
+      #n8n-chat .enhanced-voice-button:hover {
+        background: #218838 !important;
+      }
+
+      #n8n-chat .enhanced-voice-button.recording {
+        background: #dc3545 !important;
+        animation: pulse 1s infinite !important;
+      }
+
+      @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+      }
+
+      #n8n-chat .enhanced-alert-mode-btn {
+        background: #6c757d !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+        cursor: pointer !important;
+        margin: 4px 0 !important;
+        width: 100% !important;
+      }
+
+      #n8n-chat .enhanced-alert-mode-btn.active {
+        background: #dc3545 !important;
+      }
     </style>
   </head>
   <body>
@@ -165,11 +209,14 @@
         const scriptElement = document.createElement("script");
         scriptElement.type = "module";
         scriptElement.textContent = `
-          import { createChat } from './script.js';
+          import { createChat } from './enhanced-script.js';
 
           createChat({
             target: '#n8n-chat',
-            webhookUrl: '/webhook/d73c0399-28b9-4b04-9759-417e34b3d92e/chat',
+            // Production webhook:
+            webhookUrl: '/webhook-test/9416569c-169b-45cf-b768-60082dd61349',
+            // Test webhook (uncomment for testing):
+            // webhookUrl: '/webhook-test/9416569c-169b-45cf-b768-60082dd61349',
             initialMessages: [
               'Hi there! Welcome to RHB MARiA Dashboard 👋',
               'I am Maria. How can I assist you today?'
@@ -179,7 +226,11 @@
               getStarted: 'New Conversation',
               expandButtonText: 'Click to chat',
               closeButtonText: 'Close chat',
-            }
+            },
+            voiceEnabled: true,
+            textToSpeechEnabled: true,
+            autoPlayResponses: false,
+            alertModeEnabled: true
           });
         `;
         document.body.appendChild(scriptElement);
