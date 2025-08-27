@@ -212,10 +212,99 @@ const ENHANCED_VOICE_STYLES = `
     }
     
     #n8n-chat .chat-message-markdown p {
-        margin: 0 !important;
+        margin: 0 0 8px 0 !important;
         line-height: 1.4 !important;
         font-size: 14px !important;
         font-family: Inter, Helvetica, Arial, sans-serif !important;
+    }
+    
+    #n8n-chat .chat-message-markdown p:last-child {
+        margin-bottom: 0 !important;
+    }
+    
+    /* Markdown styling */
+    #n8n-chat .chat-message-markdown h1,
+    #n8n-chat .chat-message-markdown h2,
+    #n8n-chat .chat-message-markdown h3 {
+        margin: 12px 0 8px 0 !important;
+        font-weight: 600 !important;
+        line-height: 1.3 !important;
+    }
+    
+    #n8n-chat .chat-message-markdown h1 {
+        font-size: 18px !important;
+    }
+    
+    #n8n-chat .chat-message-markdown h2 {
+        font-size: 16px !important;
+    }
+    
+    #n8n-chat .chat-message-markdown h3 {
+        font-size: 14px !important;
+    }
+    
+    #n8n-chat .chat-message-markdown code {
+        background: rgba(0, 0, 0, 0.08) !important;
+        padding: 2px 4px !important;
+        border-radius: 3px !important;
+        font-family: 'Monaco', 'Consolas', 'Courier New', monospace !important;
+        font-size: 13px !important;
+    }
+    
+    #n8n-chat .chat-message-from-user .chat-message-markdown code {
+        background: rgba(255, 255, 255, 0.2) !important;
+        color: #fff !important;
+    }
+    
+    #n8n-chat .chat-message-markdown pre {
+        background: rgba(0, 0, 0, 0.05) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        border-radius: 6px !important;
+        padding: 12px !important;
+        margin: 8px 0 !important;
+        overflow-x: auto !important;
+    }
+    
+    #n8n-chat .chat-message-from-user .chat-message-markdown pre {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
+    }
+    
+    #n8n-chat .chat-message-markdown pre code {
+        background: none !important;
+        padding: 0 !important;
+        color: inherit !important;
+    }
+    
+    #n8n-chat .chat-message-markdown strong {
+        font-weight: 600 !important;
+    }
+    
+    #n8n-chat .chat-message-markdown em {
+        font-style: italic !important;
+    }
+    
+    #n8n-chat .chat-message-markdown del {
+        text-decoration: line-through !important;
+    }
+    
+    #n8n-chat .chat-message-markdown a {
+        color: #0066cc !important;
+        text-decoration: underline !important;
+    }
+    
+    #n8n-chat .chat-message-from-user .chat-message-markdown a {
+        color: #cce7ff !important;
+    }
+    
+    #n8n-chat .chat-message-markdown ul,
+    #n8n-chat .chat-message-markdown ol {
+        margin: 8px 0 !important;
+        padding-left: 20px !important;
+    }
+    
+    #n8n-chat .chat-message-markdown li {
+        margin: 2px 0 !important;
     }
     
     /* User voice message styling */
@@ -484,6 +573,140 @@ class EnhancedChatWrapper {
         this.notificationTimeout = null;
         
         this.init();
+    }
+
+    // Sanitize HTML to prevent XSS while allowing safe markdown elements
+    sanitizeHTML(html) {
+        // First escape all HTML
+        const escaped = html
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
+        
+        // Then restore safe HTML tags that we want to allow
+        const allowedTags = ['strong', 'em', 'code', 'pre', 'h1', 'h2', 'h3', 'br', 'p', 'ul', 'ol', 'li', 'del', 'a'];
+        let sanitized = escaped;
+        
+        allowedTags.forEach(tag => {
+            // Restore opening and closing tags
+            sanitized = sanitized.replace(new RegExp(`&lt;${tag}&gt;`, 'g'), `<${tag}>`);
+            sanitized = sanitized.replace(new RegExp(`&lt;/${tag}&gt;`, 'g'), `</${tag}>`);
+        });
+        
+        // Restore safe link attributes
+        sanitized = sanitized.replace(/&lt;a href=&quot;([^&quot;]+)&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer&quot;&gt;/g, 
+            '<a href="$1" target="_blank" rel="noopener noreferrer">');
+        
+        return sanitized;
+    }
+
+    // Simple markdown parser for chat messages
+    parseMarkdown(text) {
+        if (!text || typeof text !== 'string') return text;
+        
+        // First sanitize the input to prevent XSS
+        let html = this.sanitizeHTML(text);
+        
+        // Handle code blocks first (triple backticks) - preserve content as-is
+        html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
+            return `<pre><code>${code.trim()}</code></pre>`;
+        });
+        
+        // Handle inline code (single backticks)
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+        
+        // Handle headers (must be done before other formatting)
+        html = html.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+        html = html.replace(/^## (.*)$/gm, '<h2>$1</h2>');
+        html = html.replace(/^# (.*)$/gm, '<h1>$1</h1>');
+        
+        // Handle bold text
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+        
+        // Handle italic text
+        html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+        
+        // Handle strikethrough
+        html = html.replace(/~~(.*?)~~/g, '<del>$1</del>');
+        
+        // Handle links (be extra careful with URLs)
+        html = html.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, (match, text, url) => {
+            const cleanUrl = url.trim();
+            if (cleanUrl.match(/^https?:\/\//) || cleanUrl.match(/^mailto:/)) {
+                return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+            }
+            return match; // Return original if URL doesn't look safe
+        });
+        
+        // Handle lists - process line by line
+        const lines = html.split('\n');
+        const processedLines = [];
+        let inList = false;
+        let listType = '';
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const isUnorderedListItem = /^[\*\-] (.+)/.test(line);
+            const isOrderedListItem = /^\d+\. (.+)/.test(line);
+            
+            if (isUnorderedListItem || isOrderedListItem) {
+                const content = line.replace(/^[\*\-] /, '').replace(/^\d+\. /, '');
+                const newListType = isOrderedListItem ? 'ol' : 'ul';
+                
+                if (!inList) {
+                    processedLines.push(`<${newListType}>`);
+                    inList = true;
+                    listType = newListType;
+                } else if (listType !== newListType) {
+                    processedLines.push(`</${listType}>`);
+                    processedLines.push(`<${newListType}>`);
+                    listType = newListType;
+                }
+                
+                processedLines.push(`<li>${content}</li>`);
+            } else {
+                if (inList) {
+                    processedLines.push(`</${listType}>`);
+                    inList = false;
+                    listType = '';
+                }
+                processedLines.push(line);
+            }
+        }
+        
+        // Close any remaining list
+        if (inList) {
+            processedLines.push(`</${listType}>`);
+        }
+        
+        html = processedLines.join('\n');
+        
+        // Handle paragraphs - split by double newlines, but avoid breaking existing HTML
+        const paragraphs = html.split('\n\n');
+        const processedParagraphs = paragraphs.map(para => {
+            para = para.trim();
+            if (!para) return '';
+            
+            // Don't wrap if it's already HTML (contains tags) or is a list
+            if (para.includes('<') || para === '') {
+                return para;
+            }
+            
+            // Convert single newlines to <br> within paragraphs
+            para = para.replace(/\n/g, '<br>');
+            return `<p>${para}</p>`;
+        });
+        
+        html = processedParagraphs.filter(p => p).join('\n\n');
+        
+        // Clean up any remaining bare newlines
+        html = html.replace(/\n/g, '<br>');
+        
+        return html.trim();
     }
 
     async init() {
@@ -1471,9 +1694,17 @@ class EnhancedChatWrapper {
         messageDiv.setAttribute('data-timestamp', Date.now());
         
         if (type === 'text') {
+            // Escape HTML for user input to prevent XSS, but allow basic markdown
+            const safeContent = content
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#x27;');
+            
             messageDiv.innerHTML = `
                 <div class="chat-message-markdown">
-                    <p>${content}</p>
+                    <p>${safeContent}</p>
                 </div>
             `;
         } else if (type === 'voice') {
@@ -1509,10 +1740,12 @@ class EnhancedChatWrapper {
         messageDiv.setAttribute('data-timestamp', Date.now());
         
         if (type === 'text') {
+            // Parse markdown and render as HTML
+            const htmlContent = this.parseMarkdown(content);
             messageDiv.innerHTML = `
                 <div class="chat-message-actions"></div>
                 <div class="chat-message-markdown">
-                    <p>${content}</p>
+                    ${htmlContent}
                 </div>
             `;
         } else if (type === 'audio') {
