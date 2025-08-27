@@ -24,6 +24,9 @@ const ENHANCED_VOICE_STYLES = `
         bottom: 20px;
         right: 20px; /* Align to bottom-right */
         z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end; /* Align all children to the right */
     }
     
     #n8n-chat .chat-window {
@@ -36,6 +39,8 @@ const ENHANCED_VOICE_STYLES = `
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        margin-bottom: 80px; /* Space for toggle button */
+        order: 1; /* Ensure chat window appears before toggle button */
     }
     
     #n8n-chat .chat-header {
@@ -72,8 +77,8 @@ const ENHANCED_VOICE_STYLES = `
     }
     
     #n8n-chat .chat-window-toggle {
-        width: 80px;
-        height: 80px;
+        width: 60px;
+        height: 60px;
         border-radius: 50%;
         background: #6dc7df;
         border: none;
@@ -83,6 +88,10 @@ const ENHANCED_VOICE_STYLES = `
         justify-content: center;
         box-shadow: 0 4px 16px rgba(109, 199, 223, 0.4);
         transition: all 0.2s ease;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        order: 2; /* Ensure toggle button appears after chat window */
     }
     
     #n8n-chat .chat-window-toggle:hover {
