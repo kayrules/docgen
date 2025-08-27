@@ -112,7 +112,6 @@
       #n8n-chat .chat-header,
       .n8n-chat .chat-header {
         background-color: #6dc7df !important;
-        padding: 20px 16px 0 16px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -168,25 +167,41 @@
       }
 
       @keyframes pulse {
-        0% { opacity: 1; }
-        50% { opacity: 0.7; }
-        100% { opacity: 1; }
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+        100% {
+          opacity: 1;
+        }
       }
 
-      #n8n-chat .enhanced-alert-mode-btn {
+      #n8n-chat .enhanced-alert-mode-icon {
         background: #6c757d !important;
         color: white !important;
         border: none !important;
-        border-radius: 6px !important;
-        padding: 6px 10px !important;
-        font-size: 11px !important;
+        border-radius: 50% !important;
+        width: 40px !important;
+        height: 40px !important;
         cursor: pointer !important;
-        margin: 4px 0 !important;
-        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 16px !important;
+        margin-right: 8px !important;
+        transition: all 0.2s ease !important;
       }
 
-      #n8n-chat .enhanced-alert-mode-btn.active {
+      #n8n-chat .enhanced-alert-mode-icon:hover {
+        background: #5a6268 !important;
+        transform: scale(1.05) !important;
+      }
+
+      #n8n-chat .enhanced-alert-mode-icon.active {
         background: #dc3545 !important;
+        animation: pulse 2s infinite !important;
       }
     </style>
   </head>
@@ -199,8 +214,8 @@
 
     <script>
       // Skip CDN CSS entirely - we'll handle styling in enhanced-script.js
-      console.log('Skipping CDN CSS to avoid problematic selectors');
-      
+      console.log("Skipping CDN CSS to avoid problematic selectors");
+
       // Initialize chat directly without CDN CSS
       const scriptElement = document.createElement("script");
       scriptElement.type = "module";
@@ -226,7 +241,7 @@
           voiceEnabled: true,
           textToSpeechEnabled: true,
           autoPlayResponses: false,
-          alertModeEnabled: true
+          alertModeEnabled: false
         });
       `;
       document.body.appendChild(scriptElement);

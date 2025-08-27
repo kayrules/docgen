@@ -1,51 +1,52 @@
 (function () {
-    'use strict';
+  "use strict";
 
-    // Enhanced Chat Widget - Combining n8n styling with voice features
-    
-    /**
-     * Enhanced Chat Widget Library
-     * Combines the modern styling of n8n chat with advanced voice features
-     */
-    
-    // Default configuration
-    const DEFAULT_CONFIG = {
-        webhookUrl: '',
-        target: 'body',
-        mode: 'window', // 'window' | 'fullscreen'
-        theme: {
-            primaryColor: '#007bff',
-            secondaryColor: '#28a745',
-            backgroundColor: '#ffffff',
-            textColor: '#333333',
-            borderRadius: '12px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
-        },
-        initialMessages: [],
-        showWindowCloseButton: true,
-        allowFileUpload: false,
-        placeholder: 'Type your message...',
-        voiceEnabled: true,
-        textToSpeechEnabled: true,
-        autoPlayResponses: true,
-        i18n: {
-            en: {
-                title: 'AI Chat',
-                placeholder: 'Type your message...',
-                sendButton: 'Send',
-                voiceButton: 'Voice Message',
-                closeButton: 'Close',
-                voiceMessageSent: '🎤 Voice message sent',
-                audioResponse: '🔊 Audio response',
-                errorMessage: 'Something went wrong. Please try again.',
-                microphoneError: 'Unable to access microphone. Please check your browser permissions.',
-                ttsNotSupported: 'Text-to-speech not supported in this browser'
-            }
-        }
-    };
+  // Enhanced Chat Widget - Combining n8n styling with voice features
 
-    // Modern CSS styling inspired by n8n chat but enhanced for voice features
-    const ENHANCED_STYLES = `
+  /**
+   * Enhanced Chat Widget Library
+   * Combines the modern styling of n8n chat with advanced voice features
+   */
+
+  // Default configuration
+  const DEFAULT_CONFIG = {
+    webhookUrl: "",
+    target: "body",
+    mode: "window", // 'window' | 'fullscreen'
+    theme: {
+      primaryColor: "#007bff",
+      secondaryColor: "#28a745",
+      backgroundColor: "#ffffff",
+      textColor: "#333333",
+      borderRadius: "12px",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+    },
+    initialMessages: [],
+    showWindowCloseButton: true,
+    allowFileUpload: false,
+    placeholder: "Type your message...",
+    voiceEnabled: true,
+    textToSpeechEnabled: true,
+    autoPlayResponses: true,
+    i18n: {
+      en: {
+        title: "AI Chat",
+        placeholder: "Type your message...",
+        sendButton: "Send",
+        voiceButton: "Voice Message",
+        closeButton: "Close",
+        voiceMessageSent: "🎤 Voice message sent",
+        audioResponse: "🔊 Audio response",
+        errorMessage: "Something went wrong. Please try again.",
+        microphoneError:
+          "Unable to access microphone. Please check your browser permissions.",
+        ttsNotSupported: "Text-to-speech not supported in this browser",
+      },
+    },
+  };
+
+  // Modern CSS styling inspired by n8n chat but enhanced for voice features
+  const ENHANCED_STYLES = `
         .enhanced-chat {
             --chat-primary-color: #007bff;
             --chat-secondary-color: #28a745;
@@ -74,7 +75,7 @@
 
         .enhanced-chat-window {
             width: 380px;
-            height: 600px;
+            min-height: 600px;
             background: var(--chat-background);
             border-radius: var(--chat-border-radius);
             box-shadow: var(--chat-box-shadow);
@@ -177,6 +178,7 @@
             flex-direction: column;
             gap: 12px;
             scroll-behavior: smooth;
+            min-height: 400px;
         }
 
         .enhanced-chat-messages-list::-webkit-scrollbar {
@@ -624,26 +626,30 @@
             margin-right: 24px;
         }
 
-        /* Alert Mode Toggle */
-        .enhanced-alert-mode-btn {
+        /* Alert Mode Icon */
+        .enhanced-alert-mode-icon {
             background: #6c757d;
             color: white;
             border: none;
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 12px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
             cursor: pointer;
-            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
             transition: all 0.2s ease;
-            font-weight: 600;
-            width: 100%;
+            flex-shrink: 0;
+            margin-right: 8px;
         }
 
-        .enhanced-alert-mode-btn:hover {
+        .enhanced-alert-mode-icon:hover {
             background: #5a6268;
+            transform: scale(1.05);
         }
 
-        .enhanced-alert-mode-btn.active {
+        .enhanced-alert-mode-icon.active {
             background: var(--chat-danger-color);
             animation: alertPulse 2s infinite;
         }
@@ -670,63 +676,63 @@
         }
     `;
 
-    // Enhanced Chat Widget Class
-    class EnhancedChatWidget {
-        constructor(options = {}) {
-            this.config = this.mergeConfig(DEFAULT_CONFIG, options);
-            this.isOpen = false;
-            this.isMinimized = true; // Start minimized by default
-            this.isRecording = false;
-            this.mediaRecorder = null;
-            this.audioChunks = [];
-            this.elements = {};
-            this.currentAudio = null;
-            this.alertTimeout = null;
-            this.isAlertMode = false;
-            
-            this.init();
-        }
+  // Enhanced Chat Widget Class
+  class EnhancedChatWidget {
+    constructor(options = {}) {
+      this.config = this.mergeConfig(DEFAULT_CONFIG, options);
+      this.isOpen = false;
+      this.isMinimized = true; // Start minimized by default
+      this.isRecording = false;
+      this.mediaRecorder = null;
+      this.audioChunks = [];
+      this.elements = {};
+      this.currentAudio = null;
+      this.alertTimeout = null;
+      this.isAlertMode = false;
 
-        mergeConfig(defaultConfig, userConfig) {
-            const merged = { ...defaultConfig };
-            
-            Object.keys(userConfig).forEach(key => {
-                if (key === 'theme' && typeof userConfig[key] === 'object') {
-                    merged[key] = { ...defaultConfig[key], ...userConfig[key] };
-                } else if (key === 'i18n' && typeof userConfig[key] === 'object') {
-                    merged[key] = {
-                        ...defaultConfig[key],
-                        en: { ...defaultConfig[key].en, ...userConfig[key].en }
-                    };
-                } else {
-                    merged[key] = userConfig[key];
-                }
-            });
-            
-            return merged;
-        }
+      this.init();
+    }
 
-        init() {
-            this.injectStyles();
-            this.createWidget();
-            this.bindEvents();
-            this.addInitialMessages();
-            
-            if (this.config.mode === 'fullscreen') {
-                this.openFullscreen();
-            } else {
-                // Start in minimized state with toggle button visible
-                this.close();
-            }
-        }
+    mergeConfig(defaultConfig, userConfig) {
+      const merged = { ...defaultConfig };
 
-        injectStyles() {
-            // Skip style injection - use external n8n CSS instead
-            // The external CSS should be loaded before initializing the chat
-            if (document.getElementById('enhanced-chat-styles')) return;
-            
-            // Only inject minimal custom styles that aren't covered by n8n CSS
-            const minimalStyles = `
+      Object.keys(userConfig).forEach((key) => {
+        if (key === "theme" && typeof userConfig[key] === "object") {
+          merged[key] = { ...defaultConfig[key], ...userConfig[key] };
+        } else if (key === "i18n" && typeof userConfig[key] === "object") {
+          merged[key] = {
+            ...defaultConfig[key],
+            en: { ...defaultConfig[key].en, ...userConfig[key].en },
+          };
+        } else {
+          merged[key] = userConfig[key];
+        }
+      });
+
+      return merged;
+    }
+
+    init() {
+      this.injectStyles();
+      this.createWidget();
+      this.bindEvents();
+      this.addInitialMessages();
+
+      if (this.config.mode === "fullscreen") {
+        this.openFullscreen();
+      } else {
+        // Start in minimized state with toggle button visible
+        this.close();
+      }
+    }
+
+    injectStyles() {
+      // Skip style injection - use external n8n CSS instead
+      // The external CSS should be loaded before initializing the chat
+      if (document.getElementById("enhanced-chat-styles")) return;
+
+      // Only inject minimal custom styles that aren't covered by n8n CSS
+      const minimalStyles = `
                 /* RHB Diamond Icons */
                 .rhb-diamond {
                     width: 24px;
@@ -746,20 +752,23 @@
                 }
                 
                 /* Alert mode specific styles */
-                .enhanced-alert-mode-btn {
+                .enhanced-alert-mode-icon {
                     background: #6c757d;
                     color: white;
                     border: none;
-                    border-radius: 6px;
-                    padding: 8px 12px;
-                    font-size: 12px;
+                    border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
                     cursor: pointer;
-                    margin-bottom: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 16px;
                     transition: all 0.2s ease;
-                    font-weight: 600;
-                    width: 100%;
+                    flex-shrink: 0;
+                    margin-right: 8px;
                 }
-                .enhanced-alert-mode-btn.active {
+                .enhanced-alert-mode-icon.active {
                     background: #dc3545;
                     animation: alertPulse 2s infinite;
                 }
@@ -768,53 +777,54 @@
                     50% { opacity: 0.7; }
                 }
             `;
-            
-            const styleSheet = document.createElement('style');
-            styleSheet.id = 'enhanced-chat-styles';
-            styleSheet.textContent = minimalStyles;
-            document.head.appendChild(styleSheet);
-        }
 
-        createWidget() {
-            const target = typeof this.config.target === 'string' 
-                ? document.querySelector(this.config.target) 
-                : this.config.target;
+      const styleSheet = document.createElement("style");
+      styleSheet.id = "enhanced-chat-styles";
+      styleSheet.textContent = minimalStyles;
+      document.head.appendChild(styleSheet);
+    }
 
-            if (!target) {
-                console.error('Enhanced Chat: Target element not found');
-                return;
-            }
+    createWidget() {
+      const target =
+        typeof this.config.target === "string"
+          ? document.querySelector(this.config.target)
+          : this.config.target;
 
-            const widgetHTML = this.getWidgetHTML();
-            const widgetContainer = document.createElement('div');
-            widgetContainer.innerHTML = widgetHTML;
-            
-            target.appendChild(widgetContainer.firstElementChild);
-            
-            // Store element references
-            this.elements = {
-                wrapper: document.querySelector('.chat-wrapper'),
-                window: document.querySelector('.chat-window'),
-                header: document.querySelector('.chat-header'),
-                closeBtn: document.querySelector('.chat-close-button'),
-                messagesList: document.querySelector('.chat-messages-list'),
-                input: document.querySelector('.chat-input'),
-                sendBtn: document.querySelector('.chat-send-button'),
-                voiceBtn: document.querySelector('.chat-voice-button'),
-                toggleBtn: document.querySelector('.chat-toggle'),
-                alert: document.querySelector('.chat-alert'),
-                alertContent: document.querySelector('.chat-alert-content'),
-                alertClose: document.querySelector('.chat-alert-close'),
-                alertModeBtn: document.querySelector('#enhanced-alert-mode-btn'),
-                inputContainer: document.querySelector('.chat-input-container')
-            };
-        }
+      if (!target) {
+        console.error("Enhanced Chat: Target element not found");
+        return;
+      }
 
-        getWidgetHTML() {
-            const { i18n } = this.config;
-            const t = (key) => i18n.en[key] || key;
+      const widgetHTML = this.getWidgetHTML();
+      const widgetContainer = document.createElement("div");
+      widgetContainer.innerHTML = widgetHTML;
 
-            return `
+      target.appendChild(widgetContainer.firstElementChild);
+
+      // Store element references
+      this.elements = {
+        wrapper: document.querySelector(".chat-wrapper"),
+        window: document.querySelector(".chat-window"),
+        header: document.querySelector(".chat-header"),
+        closeBtn: document.querySelector(".chat-close-button"),
+        messagesList: document.querySelector(".chat-messages-list"),
+        input: document.querySelector(".chat-input"),
+        sendBtn: document.querySelector(".chat-send-button"),
+        voiceBtn: document.querySelector(".chat-voice-button"),
+        toggleBtn: document.querySelector(".chat-toggle"),
+        alert: document.querySelector(".chat-alert"),
+        alertContent: document.querySelector(".chat-alert-content"),
+        alertClose: document.querySelector(".chat-alert-close"),
+        alertModeBtn: document.querySelector("#enhanced-alert-mode-icon"),
+        inputContainer: document.querySelector(".chat-input-container"),
+      };
+    }
+
+    getWidgetHTML() {
+      const { i18n } = this.config;
+      const t = (key) => i18n.en[key] || key;
+
+      return `
                 <div class="chat-wrapper" style="display: none;">
                     <div class="chat-window">
                         <div class="chat-header">
@@ -823,37 +833,48 @@
                                     <div class="rhb-diamond-header"></div>
                                     <span>RHB</span>
                                 </div>
-                                <h1>${t('title')}</h1>
+                                <h1>${t("title")}</h1>
                             </div>
-                            ${this.config.showWindowCloseButton ? `
-                                <button class="chat-close-button" title="${t('closeButton')}" aria-label="${t('closeButton')}">
+                            ${
+                              this.config.showWindowCloseButton
+                                ? `
+                                <button class="chat-close-button" title="${t(
+                                  "closeButton"
+                                )}" aria-label="${t("closeButton")}">
                                     ×
                                 </button>
-                            ` : ''}
+                            `
+                                : ""
+                            }
                         </div>
                         <div class="chat-body">
                             <div class="chat-messages-list" role="log" aria-live="polite" aria-label="Chat messages">
                             </div>
                         </div>
                         <div class="chat-inputs">
-                            <button class="enhanced-alert-mode-btn" id="enhanced-alert-mode-btn" title="Toggle Alert Mode">
-                                🚨 Alert Mode: OFF
-                            </button>
                             <div class="chat-input-container">
                                 <textarea 
                                     class="chat-input" 
-                                    placeholder="${t('placeholder')}" 
+                                    placeholder="${t("placeholder")}" 
                                     rows="1"
-                                    aria-label="${t('placeholder')}"
+                                    aria-label="${t("placeholder")}"
                                 ></textarea>
-                                <button class="chat-button chat-send-button" title="${t('sendButton')}" aria-label="${t('sendButton')}">
+                                <button class="chat-button chat-send-button" title="${t(
+                                  "sendButton"
+                                )}" aria-label="${t("sendButton")}">
                                     →
                                 </button>
-                                ${this.config.voiceEnabled ? `
-                                    <button class="chat-button voice chat-voice-button" title="${t('voiceButton')}" aria-label="${t('voiceButton')}">
+                                ${
+                                  this.config.voiceEnabled
+                                    ? `
+                                    <button class="chat-button voice chat-voice-button" title="${t(
+                                      "voiceButton"
+                                    )}" aria-label="${t("voiceButton")}">
                                         🎤
                                     </button>
-                                ` : ''}
+                                `
+                                    : ""
+                                }
                             </div>
                         </div>
                     </div>
@@ -866,85 +887,115 @@
                     </button>
                 </div>
             `;
+    }
+
+    bindEvents() {
+      // Send button
+      this.elements.sendBtn?.addEventListener("click", () =>
+        this.sendMessage()
+      );
+
+      // Voice button
+      this.elements.voiceBtn?.addEventListener("click", () =>
+        this.toggleVoiceRecording()
+      );
+
+      // Close button
+      this.elements.closeBtn?.addEventListener("click", () => this.close());
+
+      // Toggle button (floating diamond button)
+      this.elements.toggleBtn?.addEventListener("click", () => this.open());
+
+      // Alert close button
+      this.elements.alertClose?.addEventListener("click", () =>
+        this.hideAlert()
+      );
+
+      // Alert mode toggle button
+      this.elements.alertModeBtn?.addEventListener("click", () =>
+        this.toggleAlertMode()
+      );
+
+      // Input events
+      this.elements.input?.addEventListener("keypress", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          if (!this.isAlertMode) {
+            this.sendMessage();
+          }
         }
+      });
 
-        bindEvents() {
-            // Send button
-            this.elements.sendBtn?.addEventListener('click', () => this.sendMessage());
-            
-            // Voice button
-            this.elements.voiceBtn?.addEventListener('click', () => this.toggleVoiceRecording());
-            
-            // Close button
-            this.elements.closeBtn?.addEventListener('click', () => this.close());
-            
-            // Toggle button (floating diamond button)
-            this.elements.toggleBtn?.addEventListener('click', () => this.open());
-            
-            // Alert close button
-            this.elements.alertClose?.addEventListener('click', () => this.hideAlert());
-            
-            // Alert mode toggle button
-            this.elements.alertModeBtn?.addEventListener('click', () => this.toggleAlertMode());
-            
-            // Input events
-            this.elements.input?.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (!this.isAlertMode) {
-                        this.sendMessage();
-                    }
-                }
-            });
+      this.elements.input?.addEventListener("input", () => {
+        this.autoResizeTextarea();
+      });
 
-            this.elements.input?.addEventListener('input', () => {
-                this.autoResizeTextarea();
-            });
+      // Toggle button (for minimized state)
+      this.elements.toggleBtn?.addEventListener("click", () => this.toggle());
+    }
 
-            // Toggle button (for minimized state)
-            this.elements.toggleBtn?.addEventListener('click', () => this.toggle());
-        }
+    autoResizeTextarea() {
+      const textarea = this.elements.input;
+      if (!textarea) return;
 
-        autoResizeTextarea() {
-            const textarea = this.elements.input;
-            if (!textarea) return;
-            
-            textarea.style.height = 'auto';
-            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-        }
+      textarea.style.height = "auto";
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
+    }
 
-        addInitialMessages() {
-            if (this.config.initialMessages && this.config.initialMessages.length > 0) {
-                this.config.initialMessages.forEach(message => {
-                    this.addMessage(message, false);
-                });
-            }
-        }
+    addInitialMessages() {
+      if (
+        this.config.initialMessages &&
+        this.config.initialMessages.length > 0
+      ) {
+        this.config.initialMessages.forEach((message) => {
+          this.addMessage(message, false);
+        });
+      }
+    }
 
-        addMessage(content, isUser = false, isVoice = false, audioUrl = null, autoPlay = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${isUser ? 'user' : 'bot'}${isVoice ? ' voice' : ''}`;
-            messageDiv.setAttribute('role', 'article');
-            messageDiv.setAttribute('aria-label', `${isUser ? 'User' : 'Bot'} message`);
+    addMessage(
+      content,
+      isUser = false,
+      isVoice = false,
+      audioUrl = null,
+      autoPlay = false
+    ) {
+      const messageDiv = document.createElement("div");
+      messageDiv.className = `chat-message ${isUser ? "user" : "bot"}${
+        isVoice ? " voice" : ""
+      }`;
+      messageDiv.setAttribute("role", "article");
+      messageDiv.setAttribute(
+        "aria-label",
+        `${isUser ? "User" : "Bot"} message`
+      );
 
-            if (isVoice && audioUrl) {
-                this.createVoiceMessage(messageDiv, content, audioUrl, isUser, autoPlay);
-            } else if (isUser && this.config.textToSpeechEnabled) {
-                this.createUserMessage(messageDiv, content, audioUrl);
-            } else {
-                this.createTextMessage(messageDiv, content);
-            }
+      if (isVoice && audioUrl) {
+        this.createVoiceMessage(
+          messageDiv,
+          content,
+          audioUrl,
+          isUser,
+          autoPlay
+        );
+      } else if (isUser && this.config.textToSpeechEnabled) {
+        this.createUserMessage(messageDiv, content, audioUrl);
+      } else {
+        this.createTextMessage(messageDiv, content);
+      }
 
-            this.elements.messagesList.appendChild(messageDiv);
-            this.scrollToBottom();
-            
-            return messageDiv;
-        }
+      this.elements.messagesList.appendChild(messageDiv);
+      this.scrollToBottom();
 
-        createVoiceMessage(messageDiv, content, audioUrl, isUser, autoPlay) {
-            const audioId = `audio-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            
-            messageDiv.innerHTML = `
+      return messageDiv;
+    }
+
+    createVoiceMessage(messageDiv, content, audioUrl, isUser, autoPlay) {
+      const audioId = `audio-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+
+      messageDiv.innerHTML = `
                 <div class="enhanced-message-content">
                     <div class="enhanced-voice-controls">
                         <button class="enhanced-play-button" onclick="document.getElementById('${audioId}').play()" aria-label="Play audio message">
@@ -957,26 +1008,30 @@
                             Your browser does not support audio playback.
                         </audio>
                     </div>
-                    <span class="enhanced-message-text">${content || 'Voice message'}</span>
+                    <span class="enhanced-message-text">${
+                      content || "Voice message"
+                    }</span>
                 </div>
             `;
 
-            // Auto-play for bot messages if enabled
-            if (autoPlay && !isUser && this.config.autoPlayResponses) {
-                setTimeout(() => {
-                    const audioElement = document.getElementById(audioId);
-                    if (audioElement) {
-                        this.setupAudioAutoPlay(audioElement);
-                    }
-                }, 100);
-            }
-        }
+      // Auto-play for bot messages if enabled
+      if (autoPlay && !isUser && this.config.autoPlayResponses) {
+        setTimeout(() => {
+          const audioElement = document.getElementById(audioId);
+          if (audioElement) {
+            this.setupAudioAutoPlay(audioElement);
+          }
+        }, 100);
+      }
+    }
 
-        createUserMessage(messageDiv, content, audioUrl = null) {
-            if (audioUrl) {
-                // Voice message with playback
-                const audioId = `user-audio-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-                messageDiv.innerHTML = `
+    createUserMessage(messageDiv, content, audioUrl = null) {
+      if (audioUrl) {
+        // Voice message with playback
+        const audioId = `user-audio-${Date.now()}-${Math.random()
+          .toString(36)
+          .substr(2, 9)}`;
+        messageDiv.innerHTML = `
                     <div class="enhanced-message-content">
                         <span class="enhanced-message-text">${content}</span>
                         <button class="enhanced-play-button user-play" title="Play back your voice message" onclick="document.getElementById('${audioId}').play()" aria-label="Play back voice message">
@@ -988,474 +1043,526 @@
                         </audio>
                     </div>
                 `;
-            } else {
-                // Text message with TTS
-                messageDiv.innerHTML = `
+      } else {
+        // Text message with TTS
+        messageDiv.innerHTML = `
                     <div class="enhanced-message-content">
                         <span class="enhanced-message-text">${content}</span>
-                        <button class="enhanced-play-button user-play" title="Play back your message" onclick="window.enhancedChatWidget.playUserMessage('${content.replace(/'/g, "\\'")}');" aria-label="Play text message">
+                        <button class="enhanced-play-button user-play" title="Play back your message" onclick="window.enhancedChatWidget.playUserMessage('${content.replace(
+                          /'/g,
+                          "\\'"
+                        )}');" aria-label="Play text message">
                             🔊
                         </button>
                     </div>
                 `;
-            }
+      }
+    }
+
+    createTextMessage(messageDiv, content) {
+      messageDiv.innerHTML = `<span class="enhanced-message-text">${content}</span>`;
+    }
+
+    setupAudioAutoPlay(audioElement) {
+      // Enhanced audio setup with better error handling
+      audioElement.addEventListener("loadstart", () =>
+        console.log("Audio load started")
+      );
+      audioElement.addEventListener("loadedmetadata", () =>
+        console.log("Audio metadata loaded")
+      );
+      audioElement.addEventListener("canplay", () =>
+        console.log("Audio can play")
+      );
+      audioElement.addEventListener("error", (e) =>
+        console.error("Audio error:", e)
+      );
+
+      audioElement.load();
+
+      setTimeout(() => {
+        const playPromise = audioElement.play();
+        if (playPromise) {
+          playPromise
+            .then(() => {
+              console.log("Audio auto-play succeeded");
+              this.currentAudio = audioElement;
+            })
+            .catch((error) => {
+              console.warn(
+                "Auto-play failed (user interaction may be required):",
+                error
+              );
+              this.indicateAudioReady(audioElement);
+            });
         }
+      }, 300);
+    }
 
-        createTextMessage(messageDiv, content) {
-            messageDiv.innerHTML = `<span class="enhanced-message-text">${content}</span>`;
-        }
+    indicateAudioReady(audioElement) {
+      const playBtn = audioElement.parentElement.querySelector(
+        ".enhanced-play-button"
+      );
+      if (playBtn) {
+        playBtn.style.animation = "recordingPulse 2s 3";
+        playBtn.style.backgroundColor = "#ff6b6b";
+        playBtn.title = "Click to play audio response";
+      }
+    }
 
-        setupAudioAutoPlay(audioElement) {
-            // Enhanced audio setup with better error handling
-            audioElement.addEventListener('loadstart', () => console.log('Audio load started'));
-            audioElement.addEventListener('loadedmetadata', () => console.log('Audio metadata loaded'));
-            audioElement.addEventListener('canplay', () => console.log('Audio can play'));
-            audioElement.addEventListener('error', (e) => console.error('Audio error:', e));
-
-            audioElement.load();
-            
-            setTimeout(() => {
-                const playPromise = audioElement.play();
-                if (playPromise) {
-                    playPromise.then(() => {
-                        console.log('Audio auto-play succeeded');
-                        this.currentAudio = audioElement;
-                    }).catch(error => {
-                        console.warn('Auto-play failed (user interaction may be required):', error);
-                        this.indicateAudioReady(audioElement);
-                    });
-                }
-            }, 300);
-        }
-
-        indicateAudioReady(audioElement) {
-            const playBtn = audioElement.parentElement.querySelector('.enhanced-play-button');
-            if (playBtn) {
-                playBtn.style.animation = 'recordingPulse 2s 3';
-                playBtn.style.backgroundColor = '#ff6b6b';
-                playBtn.title = 'Click to play audio response';
-            }
-        }
-
-        showTypingIndicator() {
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'enhanced-chat-message typing';
-            typingDiv.id = 'typing-indicator';
-            typingDiv.innerHTML = `
+    showTypingIndicator() {
+      const typingDiv = document.createElement("div");
+      typingDiv.className = "enhanced-chat-message typing";
+      typingDiv.id = "typing-indicator";
+      typingDiv.innerHTML = `
                 <div class="enhanced-typing-indicator">
                     <div class="enhanced-typing-dot"></div>
                     <div class="enhanced-typing-dot"></div>
                     <div class="enhanced-typing-dot"></div>
                 </div>
             `;
-            
-            this.elements.messagesList.appendChild(typingDiv);
-            this.scrollToBottom();
-        }
 
-        hideTypingIndicator() {
-            const typingIndicator = document.getElementById('typing-indicator');
-            if (typingIndicator) {
-                typingIndicator.remove();
-            }
-        }
-
-        async sendMessage() {
-            // Prevent text messages in alert mode
-            if (this.isAlertMode) {
-                this.showAlert('Text messages are disabled in Alert Mode. Use voice only.', 'warning');
-                return;
-            }
-
-            const message = this.elements.input.value.trim();
-            if (!message) return;
-
-            this.addMessage(message, true);
-            this.elements.input.value = '';
-            this.autoResizeTextarea();
-            this.setLoading(true);
-            this.showTypingIndicator();
-
-            try {
-                const messageData = { message: { text: message } };
-                // Add alertMode flag if in alert mode
-                if (this.isAlertMode) {
-                    messageData.message.alertMode = true;
-                }
-                await this.sendToWebhook(messageData);
-            } catch (error) {
-                console.error('Error sending message:', error);
-                this.addMessage(this.config.i18n.en.errorMessage, false);
-                this.showAlert(`Failed to send message: ${error.message}`, 'error');
-            } finally {
-                this.setLoading(false);
-                this.hideTypingIndicator();
-            }
-        }
-
-        async toggleVoiceRecording() {
-            if (this.isRecording) {
-                this.stopRecording();
-            } else {
-                await this.startRecording();
-            }
-        }
-
-        async startRecording() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                this.mediaRecorder = new MediaRecorder(stream);
-                this.audioChunks = [];
-
-                this.mediaRecorder.addEventListener('dataavailable', (event) => {
-                    this.audioChunks.push(event.data);
-                });
-
-                this.mediaRecorder.addEventListener('stop', async () => {
-                    const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-                    await this.sendVoiceMessage(audioBlob);
-                    stream.getTracks().forEach(track => track.stop());
-                });
-
-                this.mediaRecorder.start();
-                this.isRecording = true;
-                this.elements.voiceBtn.classList.add('recording');
-                this.elements.voiceBtn.innerHTML = '⏹';
-                
-            } catch (error) {
-                console.error('Error accessing microphone:', error);
-                this.addMessage(this.config.i18n.en.microphoneError, false);
-                this.showAlert('Microphone access denied. Please check your browser permissions.', 'warning');
-            }
-        }
-
-        stopRecording() {
-            if (this.mediaRecorder && this.isRecording) {
-                this.mediaRecorder.stop();
-                this.isRecording = false;
-                this.elements.voiceBtn.classList.remove('recording');
-                this.elements.voiceBtn.innerHTML = '🎤';
-            }
-        }
-
-        async sendVoiceMessage(audioBlob) {
-            const userAudioUrl = URL.createObjectURL(audioBlob);
-            this.addMessage(this.config.i18n.en.voiceMessageSent, true, true, userAudioUrl);
-            this.setLoading(true);
-            this.showTypingIndicator();
-
-            try {
-                const messageData = { audio: audioBlob, voice: true };
-                // Add alertMode flag if in alert mode
-                if (this.isAlertMode) {
-                    messageData.alertMode = true;
-                }
-                await this.sendToWebhook(messageData);
-            } catch (error) {
-                console.error('Error sending voice message:', error);
-                this.addMessage(this.config.i18n.en.errorMessage, false);
-                this.showAlert(`Voice message failed: ${error.message}`, 'error');
-            } finally {
-                this.setLoading(false);
-                this.hideTypingIndicator();
-            }
-        }
-
-        async sendToWebhook(data) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 180000);
-
-            try {
-                const formData = new FormData();
-                
-                if (data.audio) {
-                    const messageData = { voice: true };
-                    // Add alertMode flag if present
-                    if (data.alertMode) {
-                        messageData.alertMode = true;
-                    }
-                    formData.append('audio', data.audio, 'voice-message.wav');
-                    formData.append('message', JSON.stringify(messageData));
-                } else {
-                    formData.append('message', JSON.stringify(data));
-                }
-
-                // Support both absolute and relative URLs
-                const webhookUrl = this.config.webhookUrl.startsWith('http') 
-                    ? this.config.webhookUrl 
-                    : `${window.location.origin}${this.config.webhookUrl}`;
-
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'audio/mpeg, audio/*;q=0.9, application/json;q=0.8, */*;q=0.5'
-                    },
-                    body: formData,
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                await this.handleResponse(response);
-                
-            } catch (error) {
-                clearTimeout(timeoutId);
-                throw error;
-            }
-        }
-
-        async handleResponse(response) {
-            const contentType = response.headers.get('content-type') || '';
-            
-            if (contentType.includes('audio/')) {
-                await this.handleAudioResponse(response, contentType);
-            } else {
-                await this.handleJSONResponse(response);
-            }
-        }
-
-        async handleAudioResponse(response, contentType) {
-            const audioBlob = await response.blob();
-            
-            if (audioBlob.size > 0) {
-                const typedAudioBlob = new Blob([audioBlob], { type: contentType });
-                const audioUrl = URL.createObjectURL(typedAudioBlob);
-                this.addMessage(this.config.i18n.en.audioResponse, false, true, audioUrl, true);
-            } else {
-                throw new Error('Received empty audio response');
-            }
-        }
-
-        async handleJSONResponse(response) {
-            const responseText = await response.text();
-            
-            if (!responseText.trim()) {
-                throw new Error('Empty response from server');
-            }
-
-            let data;
-            try {
-                data = JSON.parse(responseText);
-            } catch (jsonError) {
-                throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
-            }
-
-            // Handle text-only responses
-            if (data.textOnly === "true" || data.textOnly === true) {
-                if (data.text) {
-                    this.addMessage(data.text, false);
-                }
-                return;
-            }
-
-            // Handle regular responses
-            if (data.text) {
-                this.addMessage(data.text, false);
-                this.showAlert('Message sent successfully!', 'success', 3000);
-            }
-
-            if (data.voice && data.voiceUrl) {
-                this.addMessage('Voice response', false, true, data.voiceUrl, true);
-                this.showAlert('Voice response received!', 'success', 3000);
-            }
-        }
-
-        playUserMessage(text) {
-            if (!this.config.textToSpeechEnabled) {
-                this.addMessage(this.config.i18n.en.ttsNotSupported, false);
-                return;
-            }
-
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.rate = 0.9;
-                utterance.pitch = 1;
-                utterance.volume = 0.8;
-                
-                const voices = window.speechSynthesis.getVoices();
-                const preferredVoice = voices.find(voice => 
-                    voice.lang.startsWith('en') && 
-                    (voice.name.includes('Natural') || voice.name.includes('Premium'))
-                ) || voices.find(voice => voice.lang.startsWith('en'));
-                
-                if (preferredVoice) {
-                    utterance.voice = preferredVoice;
-                }
-                
-                window.speechSynthesis.speak(utterance);
-            }
-        }
-
-        showAlert(message, type = 'success', duration = 5000) {
-            if (!this.elements.alert || !this.elements.alertContent) return;
-            
-            if (this.alertTimeout) {
-                clearTimeout(this.alertTimeout);
-            }
-
-            // Clear existing classes
-            this.elements.alert.className = 'enhanced-chat-alert';
-            this.elements.alert.classList.add(type);
-            
-            this.elements.alertContent.textContent = message;
-            this.elements.alert.classList.add('show');
-
-            // Auto-hide after duration
-            if (duration > 0) {
-                this.alertTimeout = setTimeout(() => {
-                    this.hideAlert();
-                }, duration);
-            }
-        }
-
-        hideAlert() {
-            if (!this.elements.alert) return;
-            
-            this.elements.alert.classList.remove('show');
-            if (this.alertTimeout) {
-                clearTimeout(this.alertTimeout);
-                this.alertTimeout = null;
-            }
-        }
-
-        toggleAlertMode() {
-            this.isAlertMode = !this.isAlertMode;
-
-            if (this.isAlertMode) {
-                this.elements.alertModeBtn.textContent = '🚨 Alert Mode: ON';
-                this.elements.alertModeBtn.classList.add('active');
-                this.elements.inputContainer.classList.add('alert-mode');
-                this.elements.input.placeholder = 'Alert mode: Voice only';
-                this.showAlert('Alert Mode enabled! Only voice messages allowed.', 'warning', 3000);
-            } else {
-                this.elements.alertModeBtn.textContent = '🚨 Alert Mode: OFF';
-                this.elements.alertModeBtn.classList.remove('active');
-                this.elements.inputContainer.classList.remove('alert-mode');
-                this.elements.input.placeholder = this.config.placeholder;
-                this.showAlert('Alert Mode disabled. Text and voice messages enabled.', 'info', 3000);
-            }
-        }
-
-        setLoading(isLoading) {
-            this.elements.sendBtn.disabled = isLoading;
-            if (this.elements.voiceBtn) {
-                this.elements.voiceBtn.disabled = isLoading;
-            }
-            
-            if (isLoading) {
-                this.elements.window.classList.add('enhanced-loading');
-            } else {
-                this.elements.window.classList.remove('enhanced-loading');
-            }
-        }
-
-        scrollToBottom() {
-            this.elements.messagesList.scrollTop = this.elements.messagesList.scrollHeight;
-        }
-
-        close() {
-            this.elements.wrapper.style.display = 'none';
-            this.elements.toggleBtn.style.display = 'flex';
-            this.isOpen = false;
-            this.isMinimized = true;
-        }
-
-        open() {
-            this.elements.wrapper.style.display = 'block';
-            this.elements.toggleBtn.style.display = 'none';
-            this.isOpen = true;
-            this.isMinimized = false;
-            
-            // Show welcome alert when chat is opened
-            setTimeout(() => {
-                this.showAlert('Welcome to RHB Enhanced Chat! Try the 🚨 Alert Mode for voice-only communication.', 'info', 4000);
-            }, 500);
-        }
-
-        toggle() {
-            if (this.isOpen) {
-                this.close();
-            } else {
-                this.open();
-            }
-        }
-
-        minimize() {
-            this.elements.window.classList.add('minimized');
-            this.isMinimized = true;
-        }
-
-        maximize() {
-            this.elements.window.classList.remove('minimized');
-            this.isMinimized = false;
-        }
-
-        openFullscreen() {
-            document.body.classList.add('enhanced-chat', 'fullscreen');
-            this.elements.wrapper.classList.add('fullscreen');
-        }
-
-        destroy() {
-            // Clean up event listeners and elements
-            if (this.mediaRecorder) {
-                this.mediaRecorder.stop();
-            }
-            
-            if (this.currentAudio) {
-                this.currentAudio.pause();
-            }
-            
-            if (this.alertTimeout) {
-                clearTimeout(this.alertTimeout);
-                this.alertTimeout = null;
-            }
-            
-            this.elements.wrapper?.remove();
-            
-            const styles = document.getElementById('enhanced-chat-styles');
-            if (styles) {
-                styles.remove();
-            }
-        }
+      this.elements.messagesList.appendChild(typingDiv);
+      this.scrollToBottom();
     }
 
-    // Export the createChat function similar to n8n
-    function createChat(options = {}) {
-        // Validate required options
-        if (!options.webhookUrl) {
-            console.error('Enhanced Chat: webhookUrl is required');
-            return null;
+    hideTypingIndicator() {
+      const typingIndicator = document.getElementById("typing-indicator");
+      if (typingIndicator) {
+        typingIndicator.remove();
+      }
+    }
+
+    async sendMessage() {
+      // Prevent text messages in alert mode
+      if (this.isAlertMode) {
+        this.showAlert(
+          "Text messages are disabled in Alert Mode. Use voice only.",
+          "warning"
+        );
+        return;
+      }
+
+      const message = this.elements.input.value.trim();
+      if (!message) return;
+
+      this.addMessage(message, true);
+      this.elements.input.value = "";
+      this.autoResizeTextarea();
+      this.setLoading(true);
+      this.showTypingIndicator();
+
+      try {
+        const messageData = { message: { text: message } };
+        // Add alertMode flag if in alert mode
+        if (this.isAlertMode) {
+          messageData.message.alertMode = true;
+        }
+        await this.sendToWebhook(messageData);
+      } catch (error) {
+        console.error("Error sending message:", error);
+        this.addMessage(this.config.i18n.en.errorMessage, false);
+        this.showAlert(`Failed to send message: ${error.message}`, "error");
+      } finally {
+        this.setLoading(false);
+        this.hideTypingIndicator();
+      }
+    }
+
+    async toggleVoiceRecording() {
+      if (this.isRecording) {
+        this.stopRecording();
+      } else {
+        await this.startRecording();
+      }
+    }
+
+    async startRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        this.mediaRecorder = new MediaRecorder(stream);
+        this.audioChunks = [];
+
+        this.mediaRecorder.addEventListener("dataavailable", (event) => {
+          this.audioChunks.push(event.data);
+        });
+
+        this.mediaRecorder.addEventListener("stop", async () => {
+          const audioBlob = new Blob(this.audioChunks, { type: "audio/wav" });
+          await this.sendVoiceMessage(audioBlob);
+          stream.getTracks().forEach((track) => track.stop());
+        });
+
+        this.mediaRecorder.start();
+        this.isRecording = true;
+        this.elements.voiceBtn.classList.add("recording");
+        this.elements.voiceBtn.innerHTML = "⏹";
+      } catch (error) {
+        console.error("Error accessing microphone:", error);
+        this.addMessage(this.config.i18n.en.microphoneError, false);
+        this.showAlert(
+          "Microphone access denied. Please check your browser permissions.",
+          "warning"
+        );
+      }
+    }
+
+    stopRecording() {
+      if (this.mediaRecorder && this.isRecording) {
+        this.mediaRecorder.stop();
+        this.isRecording = false;
+        this.elements.voiceBtn.classList.remove("recording");
+        this.elements.voiceBtn.innerHTML = "🎤";
+      }
+    }
+
+    async sendVoiceMessage(audioBlob) {
+      const userAudioUrl = URL.createObjectURL(audioBlob);
+      this.addMessage(
+        this.config.i18n.en.voiceMessageSent,
+        true,
+        true,
+        userAudioUrl
+      );
+      this.setLoading(true);
+      this.showTypingIndicator();
+
+      try {
+        const messageData = { audio: audioBlob, voice: true };
+        // Add alertMode flag if in alert mode
+        if (this.isAlertMode) {
+          messageData.alertMode = true;
+        }
+        await this.sendToWebhook(messageData);
+      } catch (error) {
+        console.error("Error sending voice message:", error);
+        this.addMessage(this.config.i18n.en.errorMessage, false);
+        this.showAlert(`Voice message failed: ${error.message}`, "error");
+      } finally {
+        this.setLoading(false);
+        this.hideTypingIndicator();
+      }
+    }
+
+    async sendToWebhook(data) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 180000);
+
+      try {
+        const formData = new FormData();
+
+        if (data.audio) {
+          const messageData = { voice: true };
+          // Add alertMode flag if present
+          if (data.alertMode) {
+            messageData.alertMode = true;
+          }
+          formData.append("audio", data.audio, "voice-message.wav");
+          formData.append("message", JSON.stringify(messageData));
+        } else {
+          formData.append("message", JSON.stringify(data));
         }
 
-        // Create and return the widget instance
-        const widget = new EnhancedChatWidget(options);
-        
-        // Make it globally accessible for debugging
-        window.enhancedChatWidget = widget;
-        
-        return widget;
+        // Support both absolute and relative URLs
+        const webhookUrl = this.config.webhookUrl.startsWith("http")
+          ? this.config.webhookUrl
+          : `${window.location.origin}${this.config.webhookUrl}`;
+
+        const response = await fetch(webhookUrl, {
+          method: "POST",
+          headers: {
+            Accept:
+              "audio/mpeg, audio/*;q=0.9, application/json;q=0.8, */*;q=0.5",
+          },
+          body: formData,
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        await this.handleResponse(response);
+      } catch (error) {
+        clearTimeout(timeoutId);
+        throw error;
+      }
     }
 
-    // Auto-initialize if script is loaded directly
-    if (typeof window !== 'undefined') {
-        window.createChat = createChat;
-        window.EnhancedChatWidget = EnhancedChatWidget;
+    async handleResponse(response) {
+      const contentType = response.headers.get("content-type") || "";
+
+      if (contentType.includes("audio/")) {
+        await this.handleAudioResponse(response, contentType);
+      } else {
+        await this.handleJSONResponse(response);
+      }
     }
 
-    // Module export support
-    if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { createChat, EnhancedChatWidget };
+    async handleAudioResponse(response, contentType) {
+      const audioBlob = await response.blob();
+
+      if (audioBlob.size > 0) {
+        const typedAudioBlob = new Blob([audioBlob], { type: contentType });
+        const audioUrl = URL.createObjectURL(typedAudioBlob);
+        this.addMessage(
+          this.config.i18n.en.audioResponse,
+          false,
+          true,
+          audioUrl,
+          true
+        );
+      } else {
+        throw new Error("Received empty audio response");
+      }
     }
 
-    // ES Module export support
-    if (typeof window !== 'undefined') {
-        window.enhancedChatExports = { createChat, EnhancedChatWidget };
+    async handleJSONResponse(response) {
+      const responseText = await response.text();
+
+      if (!responseText.trim()) {
+        throw new Error("Empty response from server");
+      }
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        throw new Error(
+          `Invalid JSON response: ${responseText.substring(0, 100)}`
+        );
+      }
+
+      // Handle text-only responses
+      if (data.textOnly === "true" || data.textOnly === true) {
+        if (data.text) {
+          this.addMessage(data.text, false);
+        }
+        return;
+      }
+
+      // Handle regular responses
+      if (data.text) {
+        this.addMessage(data.text, false);
+        this.showAlert("Message sent successfully!", "success", 3000);
+      }
+
+      if (data.voice && data.voiceUrl) {
+        this.addMessage("Voice response", false, true, data.voiceUrl, true);
+        this.showAlert("Voice response received!", "success", 3000);
+      }
     }
 
+    playUserMessage(text) {
+      if (!this.config.textToSpeechEnabled) {
+        this.addMessage(this.config.i18n.en.ttsNotSupported, false);
+        return;
+      }
+
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.volume = 0.8;
+
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice =
+          voices.find(
+            (voice) =>
+              voice.lang.startsWith("en") &&
+              (voice.name.includes("Natural") || voice.name.includes("Premium"))
+          ) || voices.find((voice) => voice.lang.startsWith("en"));
+
+        if (preferredVoice) {
+          utterance.voice = preferredVoice;
+        }
+
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    showAlert(message, type = "success", duration = 5000) {
+      if (!this.elements.alert || !this.elements.alertContent) return;
+
+      if (this.alertTimeout) {
+        clearTimeout(this.alertTimeout);
+      }
+
+      // Clear existing classes
+      this.elements.alert.className = "enhanced-chat-alert";
+      this.elements.alert.classList.add(type);
+
+      this.elements.alertContent.textContent = message;
+      this.elements.alert.classList.add("show");
+
+      // Auto-hide after duration
+      if (duration > 0) {
+        this.alertTimeout = setTimeout(() => {
+          this.hideAlert();
+        }, duration);
+      }
+    }
+
+    hideAlert() {
+      if (!this.elements.alert) return;
+
+      this.elements.alert.classList.remove("show");
+      if (this.alertTimeout) {
+        clearTimeout(this.alertTimeout);
+        this.alertTimeout = null;
+      }
+    }
+
+    toggleAlertMode() {
+      this.isAlertMode = !this.isAlertMode;
+
+      if (this.isAlertMode) {
+        this.elements.alertModeBtn.classList.add("active");
+        this.elements.alertModeBtn.title = "Alert Mode: ON - Click to disable";
+        this.elements.inputContainer.classList.add("alert-mode");
+        this.elements.input.placeholder = "Alert mode: Voice only";
+        this.showAlert(
+          "Alert Mode enabled! Only voice messages allowed.",
+          "warning",
+          3000
+        );
+      } else {
+        this.elements.alertModeBtn.classList.remove("active");
+        this.elements.alertModeBtn.title = "Alert Mode: OFF - Click to enable";
+        this.elements.inputContainer.classList.remove("alert-mode");
+        this.elements.input.placeholder = this.config.placeholder;
+        this.showAlert(
+          "Alert Mode disabled. Text and voice messages enabled.",
+          "info",
+          3000
+        );
+      }
+    }
+
+    setLoading(isLoading) {
+      this.elements.sendBtn.disabled = isLoading;
+      if (this.elements.voiceBtn) {
+        this.elements.voiceBtn.disabled = isLoading;
+      }
+
+      if (isLoading) {
+        this.elements.window.classList.add("enhanced-loading");
+      } else {
+        this.elements.window.classList.remove("enhanced-loading");
+      }
+    }
+
+    scrollToBottom() {
+      this.elements.messagesList.scrollTop =
+        this.elements.messagesList.scrollHeight;
+    }
+
+    close() {
+      this.elements.wrapper.style.display = "none";
+      this.elements.toggleBtn.style.display = "flex";
+      this.isOpen = false;
+      this.isMinimized = true;
+    }
+
+    open() {
+      this.elements.wrapper.style.display = "block";
+      this.elements.toggleBtn.style.display = "none";
+      this.isOpen = true;
+      this.isMinimized = false;
+
+      // Show welcome alert when chat is opened
+      setTimeout(() => {
+        this.showAlert(
+          "Welcome to RHB Enhanced Chat! Try the 🚨 Alert Mode for voice-only communication.",
+          "info",
+          4000
+        );
+      }, 500);
+    }
+
+    toggle() {
+      if (this.isOpen) {
+        this.close();
+      } else {
+        this.open();
+      }
+    }
+
+    minimize() {
+      this.elements.window.classList.add("minimized");
+      this.isMinimized = true;
+    }
+
+    maximize() {
+      this.elements.window.classList.remove("minimized");
+      this.isMinimized = false;
+    }
+
+    openFullscreen() {
+      document.body.classList.add("enhanced-chat", "fullscreen");
+      this.elements.wrapper.classList.add("fullscreen");
+    }
+
+    destroy() {
+      // Clean up event listeners and elements
+      if (this.mediaRecorder) {
+        this.mediaRecorder.stop();
+      }
+
+      if (this.currentAudio) {
+        this.currentAudio.pause();
+      }
+
+      if (this.alertTimeout) {
+        clearTimeout(this.alertTimeout);
+        this.alertTimeout = null;
+      }
+
+      this.elements.wrapper?.remove();
+
+      const styles = document.getElementById("enhanced-chat-styles");
+      if (styles) {
+        styles.remove();
+      }
+    }
+  }
+
+  // Export the createChat function similar to n8n
+  function createChat(options = {}) {
+    // Validate required options
+    if (!options.webhookUrl) {
+      console.error("Enhanced Chat: webhookUrl is required");
+      return null;
+    }
+
+    // Create and return the widget instance
+    const widget = new EnhancedChatWidget(options);
+
+    // Make it globally accessible for debugging
+    window.enhancedChatWidget = widget;
+
+    return widget;
+  }
+
+  // Auto-initialize if script is loaded directly
+  if (typeof window !== "undefined") {
+    window.createChat = createChat;
+    window.EnhancedChatWidget = EnhancedChatWidget;
+  }
+
+  // Module export support
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = { createChat, EnhancedChatWidget };
+  }
+
+  // ES Module export support
+  if (typeof window !== "undefined") {
+    window.enhancedChatExports = { createChat, EnhancedChatWidget };
+  }
 })();
