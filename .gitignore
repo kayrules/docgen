@@ -2,7 +2,7 @@ projects/*/**
 backups/*/**
 .DS_Store
 .env
-/node_modules
+node_modules
 /cache
 /lib
 /backups
@@ -12,3 +12,5 @@ backups/*/**
 docusaurus.config.*.backup
 
 *.backup
+.claude
+.cursor

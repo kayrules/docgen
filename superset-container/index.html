@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Superset + Chat Demo</title>
+    <!-- Load Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+      /* Chat widget overlay */
+      #n8n-chat {
+        position: fixed !important;
+        bottom: 20px !important;
+        right: 20px !important;
+        z-index: 9999 !important; /* ensures it's above iframe */
+      }
+
+      /* Additional styling to ensure chat widget displays properly */
+      #n8n-chat .chat-widget {
+        position: relative !important;
+      }
+
+      /* Override chat widget font family */
+      #n8n-chat,
+      #n8n-chat *,
+      #n8n-chat .chat-widget,
+      #n8n-chat .chat-widget *,
+      .n8n-chat,
+      .n8n-chat * {
+        font-family: Inter, Helvetica, Arial, sans-serif !important;
+      }
+
+      /* Custom floating bubble styling - only for the main toggle button */
+      #n8n-chat [class*="toggle"]:not([class*="chat-window"] [class*="toggle"]),
+      #n8n-chat [class*="fab"]:not([class*="chat-window"] [class*="fab"]),
+      #n8n-chat
+        [class*="trigger"]:not([class*="chat-window"] [class*="trigger"]),
+      .n8n-chat [class*="toggle"]:not([class*="chat-window"] [class*="toggle"]),
+      .n8n-chat [class*="fab"]:not([class*="chat-window"] [class*="fab"]),
+      .n8n-chat
+        [class*="trigger"]:not([class*="chat-window"] [class*="trigger"]) {
+        background-image: url("diamond.jpg") !important;
+        background-size: 40px 40px !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        border-radius: 16px !important;
+        width: 56px !important;
+        height: 56px !important;
+        border: none !important;
+        position: relative !important;
+        overflow: hidden !important;
+      }
+
+      /* Target specific chat-window-toggle element */
+      #n8n-chat .chat-window-toggle,
+      .n8n-chat .chat-window-toggle {
+        background-image: url("diamond.jpg") !important;
+        background-size: 36px 36px !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        border-radius: 30px !important;
+        width: 80px !important;
+        height: 80px !important;
+        border: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+
+      /* Hide the SVG inside chat-window-toggle */
+      #n8n-chat .chat-window-toggle svg,
+      .n8n-chat .chat-window-toggle svg {
+        display: none !important;
+      }
+
+      /* Hide existing icons only on floating button */
+      #n8n-chat
+        [class*="toggle"]:not([class*="chat-window"] [class*="toggle"])
+        svg,
+      #n8n-chat
+        [class*="toggle"]:not([class*="chat-window"] [class*="toggle"])
+        img,
+      #n8n-chat [class*="fab"]:not([class*="chat-window"] [class*="fab"]) svg,
+      #n8n-chat [class*="fab"]:not([class*="chat-window"] [class*="fab"]) img,
+      .n8n-chat
+        [class*="toggle"]:not([class*="chat-window"] [class*="toggle"])
+        svg,
+      .n8n-chat
+        [class*="toggle"]:not([class*="chat-window"] [class*="toggle"])
+        img,
+      .n8n-chat [class*="fab"]:not([class*="chat-window"] [class*="fab"]) svg,
+      .n8n-chat [class*="fab"]:not([class*="chat-window"] [class*="fab"]) img {
+        display: none !important;
+      }
+
+      /* Custom chat header styling */
+      #n8n-chat .chat-header,
+      .n8n-chat .chat-header {
+        background-color: #6dc7df !important;
+        padding: 20px 16px 0 16px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 16px 16px 0 0 !important;
+      }
+
+      #n8n-chat .chat-window-toggle {
+        background-color: #6dc7df !important;
+      }
+
+      /* Hide all text in chat header */
+      #n8n-chat .chat-header *,
+      .n8n-chat .chat-header * {
+        color: transparent !important;
+        font-size: 0 !important;
+        text-indent: -9999px !important;
+      }
+
+      /* Add RHB Bank logo image */
+      #n8n-chat .chat-header::before,
+      .n8n-chat .chat-header::before {
+        content: "" !important;
+        display: block !important;
+        width: 120px !important;
+        height: 32px !important;
+        background-image: url("rhblogo.png") !important;
+        background-size: contain !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        position: relative !important;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Superset inside iframe -->
+    <iframe src="/superset/welcome/"></iframe>
+
+    <!-- Chat widget container -->
+    <div id="n8n-chat"></div>
+
+    <script>
+      // Load CSS first and wait for it to load
+      const linkElement = document.createElement("link");
+      linkElement.rel = "stylesheet";
+      linkElement.href =
+        "https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css";
+
+      linkElement.onload = function () {
+        // CSS loaded, now load and initialize chat
+        const scriptElement = document.createElement("script");
+        scriptElement.type = "module";
+        scriptElement.textContent = `
+          import { createChat } from './script.js';
+
+          createChat({
+            target: '#n8n-chat',
+            webhookUrl: '/webhook/d73c0399-28b9-4b04-9759-417e34b3d92e/chat',
+            initialMessages: [
+              'Hi there! Welcome to RHB MARiA Dashboard 👋',
+              'I am Maria. How can I assist you today?'
+            ],
+            chatWindowConfig: {
+              welcomeMessage: 'Hi there! Welcome to RHB 👋',
+              getStarted: 'New Conversation',
+              expandButtonText: 'Click to chat',
+              closeButtonText: 'Close chat',
+            }
+          });
+        `;
+        document.body.appendChild(scriptElement);
+      };
+
+      document.head.appendChild(linkElement);
+    </script>
+  </body>
+</html>
