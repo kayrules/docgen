@@ -12,7 +12,7 @@ const ENHANCED_CONFIG = {
     textToSpeechEnabled: true,
     autoPlayResponses: true,
     alertModeEnabled: true,
-    webhookUrl: '/webhook-test/9416569c-169b-45cf-b768-60082dd61349'
+    webhookUrl: '/webhook/9416569c-169b-45cf-b768-60082dd61349'
 };
 
 // Complete CSS replacing CDN to avoid problematic selectors
