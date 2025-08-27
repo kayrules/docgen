@@ -15,14 +15,145 @@ const ENHANCED_CONFIG = {
     webhookUrl: '/webhook/3157e7f7-34a4-4c1e-a9af-b0b0c077e2aa'
 };
 
-// Enhanced styles for voice features
+// Complete CSS replacing CDN to avoid problematic selectors
 const ENHANCED_VOICE_STYLES = `
+    /* Base n8n chat styles - cleaned version without problematic transparent selectors */
+    #n8n-chat {
+        font-family: Inter, Helvetica, Arial, sans-serif !important;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+    
+    #n8n-chat .chat-window {
+        width: 400px;
+        max-height: 600px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        border: 1px solid #e1e5e9;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    
+    #n8n-chat .chat-header {
+        background: #6dc7df;
+        padding: 16px;
+        color: white;
+        font-weight: 600;
+        border-radius: 16px 16px 0 0;
+        text-align: center;
+    }
+    
+    #n8n-chat .chat-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        max-height: 500px;
+    }
+    
+    #n8n-chat .chat-messages-list {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 400px;
+    }
+    
+    #n8n-chat .chat-footer {
+        padding: 16px;
+        border-top: 1px solid #e1e5e9;
+        background: white;
+        border-radius: 0 0 16px 16px;
+    }
+    
+    #n8n-chat .chat-window-toggle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #6dc7df;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(109, 199, 223, 0.4);
+        transition: all 0.2s ease;
+    }
+    
+    #n8n-chat .chat-window-toggle:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(109, 199, 223, 0.6);
+    }
     /* Chat message ordering and layout fixes */
     #n8n-chat [class*="message"],
     #n8n-chat [class*="chat"] {
         display: flex !important;
         flex-direction: column !important;
         order: unset !important;
+    }
+    
+    /* EXACT targeting for the input structure - Light DOM */
+    #n8n-chat .chat-inputs {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px !important;
+        flex-wrap: nowrap !important;
+    }
+    
+    #n8n-chat .chat-inputs textarea[data-test-id="chat-input"] {
+        flex: 1 !important;
+        min-width: 0 !important;
+        height: 40px !important;
+        max-height: 40px !important;
+        min-height: 40px !important;
+        border-radius: 20px !important;
+        padding: 10px 14px !important;
+        font-size: 14px !important;
+        resize: none !important;
+        overflow: hidden !important;
+        line-height: 20px !important;
+        box-sizing: border-box !important;
+    }
+    
+    #n8n-chat .chat-inputs-controls {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 4px !important;
+        flex-shrink: 0 !important;
+    }
+    
+    #n8n-chat .chat-inputs-controls button {
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+        flex-shrink: 0 !important;
+    }
+    
+    #n8n-chat .enhanced-voice-button {
+        background: #229ED9 !important;
+        color: white !important;
+        border: none !important;
+    }
+    
+    #n8n-chat .chat-input-send-button {
+        background: #229ED9 !important;
+        color: white !important;
+        border: none !important;
+    }
+    
+    #n8n-chat .chat-input-send-button:disabled {
+        background: #ccc !important;
     }
     
     /* Ensure messages appear in chronological order */
@@ -35,29 +166,120 @@ const ENHANCED_VOICE_STYLES = `
         box-sizing: border-box !important;
     }
     
-    /* User message styling */
-    .enhanced-user-message {
-        background: #007bff !important;
-        color: white !important;
-        border-radius: 12px !important;
-        padding: 12px !important;
-        margin: 8px 0 !important;
-        margin-left: 20% !important;
-        text-align: right !important;
-        font-family: Inter, Helvetica, Arial, sans-serif !important;
-        align-self: flex-end !important;
+    /* Telegram-like styling for native messages */
+    #n8n-chat .chat-message {
+        margin: 6px 0 !important;
+        max-width: 80% !important;
+        word-wrap: break-word !important;
     }
     
-    /* Bot message styling */
-    .enhanced-bot-message {
-        background: #f8f9fa !important;
-        border-radius: 12px !important;
-        padding: 12px !important;
-        margin: 8px 0 !important;
-        margin-right: 20% !important;
-        border-left: 4px solid #28a745 !important;
-        font-family: Inter, Helvetica, Arial, sans-serif !important;
+    #n8n-chat .chat-message-from-user {
+        align-self: flex-end !important;
+        margin-left: auto !important;
+        margin-right: 0 !important;
+    }
+    
+    #n8n-chat .chat-message-from-bot {
         align-self: flex-start !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
+    }
+    
+    #n8n-chat .chat-message-from-user .chat-message-markdown {
+        background: #229ED9 !important;
+        color: white !important;
+        border-radius: 16px 16px 4px 16px !important;
+        padding: 10px 14px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+    }
+    
+    #n8n-chat .chat-message-from-bot .chat-message-markdown {
+        background: #ffffff !important;
+        color: #222 !important;
+        border: 1px solid #e6eaef !important;
+        border-radius: 16px 16px 16px 4px !important;
+        padding: 10px 14px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+    }
+    
+    #n8n-chat .chat-message-markdown p {
+        margin: 0 !important;
+        line-height: 1.4 !important;
+        font-size: 14px !important;
+        font-family: Inter, Helvetica, Arial, sans-serif !important;
+    }
+    
+    /* Voice message styling - same as text */
+    .enhanced-voice-message {
+        background: #229ED9 !important;
+        color: white !important;
+        border-radius: 16px 16px 4px 16px !important;
+        padding: 10px 14px !important;
+        margin: 6px 0 !important;
+        margin-left: auto !important;
+        margin-right: 0 !important;
+        max-width: 80% !important;
+        align-self: flex-end !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+    }
+    
+    /* Audio response styling */
+    .enhanced-audio-message {
+        background: #ffffff !important;
+        color: #222 !important;
+        border: 1px solid #e6eaef !important;
+        border-radius: 16px 16px 16px 4px !important;
+        padding: 10px 14px !important;
+        margin: 6px 0 !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
+        max-width: 80% !important;
+        align-self: flex-start !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+    }
+    
+    /* Hide TTS buttons - not needed in Telegram style */
+    .enhanced-play-button {
+        display: none !important;
+    }
+    
+    /* Hide empty response - use display none for common patterns */
+    #n8n-chat .chat-message[data-empty="true"],
+    #n8n-chat .enhanced-empty-response {
+        display: none !important;
+        height: 0 !important;
+        opacity: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    /* Clean message styling without problematic selectors */
+    #n8n-chat .chat-message {
+        display: flex !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        position: relative !important;
+        max-width: 80% !important;
+        margin: 6px 0 !important;
+        word-wrap: break-word !important;
+    }
+    
+    /* Simple message positioning */
+    #n8n-chat .chat-message-from-user {
+        align-self: flex-end !important;
+        margin-left: auto !important;
+        margin-right: 0 !important;
+    }
+    
+    #n8n-chat .chat-message-from-bot {
+        align-self: flex-start !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
     }
 
     /* Voice control buttons */
@@ -333,7 +555,7 @@ class EnhancedChatWrapper {
         
         // Try to inject ordering styles into the widget's shadow root (if any)
         this.injectOrderingStylesIntoShadowRootWithRetry();
-
+        
         console.log('Enhanced chat with voice features initialized');
     }
 
@@ -451,15 +673,42 @@ class EnhancedChatWrapper {
                 for (const mutation of mutations) {
                     for (const node of mutation.addedNodes) {
                         if (!(node instanceof HTMLElement)) continue;
+                        
+                        // Check if this is an empty response and remove it immediately
+                        const content = node.textContent || '';
+                        const innerHTML = node.innerHTML || '';
+                        const emptyPatterns = [
+                            '<Empty response>',
+                            '&lt;Empty response&gt;',
+                            'Empty response'
+                        ];
+                        
+                        const isEmpty = emptyPatterns.some(pattern => 
+                            content.includes(pattern) || innerHTML.includes(pattern)
+                        );
+                        
+                        if (isEmpty) {
+                            console.log('Intercepting and removing empty response node');
+                            node.remove();
+                            continue;
+                        }
+                        
+                        // No need to check for transparent classes since we're not using CDN CSS
+                        
                         // Skip our own enhanced UI elements and controls
                         if (
                             node.matches('.enhanced-voice-message, .enhanced-play-button, .enhanced-notification, .enhanced-voice-button, .enhanced-input-container, button, audio')
                         ) {
                             continue;
                         }
-                        this.enhanceMessage(node);
-                    }
+                            this.enhanceMessage(node);
+                        }
                 }
+                
+                // Also run cleanup after any DOM changes
+                setTimeout(() => {
+                    this.removeEmptyPlaceholders();
+                }, 100);
             });
 
             observer.observe(messageContainer, {
@@ -572,8 +821,6 @@ class EnhancedChatWrapper {
         try {
             console.log('Sending text message:', message);
             
-            // Let the original n8n chat render the user's message and loading state
-            
             // Create FormData for text message with your specified format
             const formData = new FormData();
             
@@ -642,13 +889,13 @@ class EnhancedChatWrapper {
         if (messageElement.querySelector('.enhanced-play-button')) return;
 
         // Add TTS button to message elements
-        const playBtn = document.createElement('button');
-        playBtn.className = 'enhanced-play-button';
-        playBtn.innerHTML = '🔊';
-        playBtn.title = 'Play message';
+            const playBtn = document.createElement('button');
+            playBtn.className = 'enhanced-play-button';
+            playBtn.innerHTML = '🔊';
+            playBtn.title = 'Play message';
         playBtn.onclick = () => this.playTextAsVoice(text);
-        
-        messageElement.appendChild(playBtn);
+            
+            messageElement.appendChild(playBtn);
     }
 
     addNotificationSystem() {
@@ -715,7 +962,7 @@ class EnhancedChatWrapper {
             this.mediaRecorder.addEventListener('dataavailable', (event) => {
                 console.log('Data available, size:', event.data.size);
                 if (event.data.size > 0) {
-                    this.audioChunks.push(event.data);
+                this.audioChunks.push(event.data);
                 }
             });
 
@@ -802,13 +1049,13 @@ class EnhancedChatWrapper {
             // Send to webhook with proper format
             const formData = new FormData();
             formData.append('audio', audioBlob, 'voice-message.wav');
-
+            
             const messageData = { voice: true };
             // Add alertMode flag if in alert mode
             if (this.isAlertMode) {
                 messageData.alertMode = true;
             }
-
+            
             formData.append('message', JSON.stringify(messageData));
 
             // Use original fetch to avoid interception
@@ -878,21 +1125,20 @@ class EnhancedChatWrapper {
 
         console.log('Parsed response data:', data);
 
+        // Always clean up empty responses first
+        this.removeEmptyPlaceholders();
+
         // Handle text responses
-        if (data.text) {
+        if (data.text && data.text.trim()) {
             console.log('Adding text message to chat:', data.text);
-            this.addTextMessageToChat(data.text);
+            this.addBotMessageToNativeContainer(data.text);
             this.showNotification('Response received!', 'success', 2000);
-            // Remove any placeholder empty responses the base widget may have added
-            this.removeEmptyPlaceholders();
         }
 
         // Handle voice responses
         if (data.voice && data.voiceUrl) {
             this.addAudioMessageToChat('🔊 Voice response', data.voiceUrl);
             this.showNotification('Voice response received!', 'success', 3000);
-            // Clean up placeholders after adding audio reply
-            this.removeEmptyPlaceholders();
         }
     }
 
@@ -900,19 +1146,102 @@ class EnhancedChatWrapper {
         try {
             const container = document.querySelector('#n8n-chat');
             if (!container) return;
-            const nodes = container.querySelectorAll('*');
-            nodes.forEach((node) => {
-                if (!(node instanceof HTMLElement)) return;
-                const text = (node.textContent || '').trim();
-                if (text === '<Empty response>') {
-                    // Remove the nearest message-bubble container if possible
-                    const bubble = node.closest('[class*="message"], [class*="bubble"], div');
-                    (bubble || node).remove();
-                }
+            
+            // More aggressive approach - remove various forms of empty responses
+            const selectors = [
+                '.chat-message',
+                '.enhanced-bot-message', 
+                '.enhanced-user-message',
+                '[class*="message"]'
+            ];
+            
+            selectors.forEach(selector => {
+                const elements = container.querySelectorAll(selector);
+                elements.forEach((element) => {
+                    const content = element.textContent || '';
+                    const innerHTML = element.innerHTML || '';
+                    
+                    // Check for various forms of empty response
+                    const emptyPatterns = [
+                        '<Empty response>',
+                        '&lt;Empty response&gt;',
+                        'Empty response',
+                        '{"status": "handled"}',
+                        '{ "status": "handled" }'
+                    ];
+                    
+                    const isEmpty = emptyPatterns.some(pattern => 
+                        content.includes(pattern) || innerHTML.includes(pattern)
+                    );
+                    
+                    // Also check if content is essentially empty (only whitespace/symbols)
+                    const trimmedContent = content.trim().replace(/[^\w\s]/g, '');
+                    const isEssentiallyEmpty = trimmedContent.length < 3;
+                    
+                    if (isEmpty) {
+                        console.log('Marking empty response for removal:', content.substring(0, 50));
+                        element.setAttribute('data-empty', 'true');
+                        element.classList.add('enhanced-empty-response');
+                        element.style.display = 'none';
+                        // Also remove it from DOM
+                        setTimeout(() => element.remove(), 100);
+                    } else if (isEssentiallyEmpty && element.children.length === 0) {
+                        console.log('Removing essentially empty element:', content.substring(0, 50));
+                        element.remove();
+                    }
+                });
             });
+            
+            // Also hide messages via CSS that might appear later
+            this.injectEmptyResponseCSS();
+            
         } catch (e) {
             console.warn('Placeholder cleanup error:', e);
         }
+    }
+
+    injectEmptyResponseCSS() {
+        const hideEmptyCSS = `
+            /* Mark and hide empty response elements */
+            #n8n-chat .enhanced-empty-response,
+            #n8n-chat .chat-message[data-empty="true"] {
+                display: none !important;
+                height: 0 !important;
+                opacity: 0 !important;
+                overflow: hidden !important;
+                position: absolute !important;
+                left: -9999px !important;
+            }
+        `;
+        
+        const existingStyle = document.getElementById('hide-empty-responses');
+        if (!existingStyle) {
+            const style = document.createElement('style');
+            style.id = 'hide-empty-responses';
+            style.textContent = hideEmptyCSS;
+            document.head.appendChild(style);
+        }
+    }
+
+    addBotMessageToNativeContainer(text) {
+        const messagesContainer = document.querySelector('#n8n-chat .chat-messages-list');
+        if (!messagesContainer) {
+            console.warn('Could not find native messages container');
+            return;
+        }
+
+        // Create a message using the native structure
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message chat-message-from-bot enhanced-native-bot';
+        messageDiv.innerHTML = `
+            <div class="chat-message-actions"></div>
+            <div class="chat-message-markdown">
+                <p>${text}</p>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(messageDiv);
+        this.scrollToBottom(messagesContainer);
     }
 
     addTextMessageToChat(text) {
@@ -1017,10 +1346,108 @@ class EnhancedChatWrapper {
                 s.id = styleId;
                 s.textContent = `
                     /* Enforce chronological stacking inside shadow DOM */
-                    [class*="messages"], [class*="message-list"], [role="log"] {
+                    .chat-messages-list {
                         display: flex !important;
                         flex-direction: column !important;
                         gap: 12px !important;
+                    }
+
+                    /* EXACT targeting for the input structure */
+                    .chat-inputs {
+                        display: flex !important;
+                        flex-direction: row !important;
+                        align-items: center !important;
+                        gap: 8px !important;
+                        flex-wrap: nowrap !important;
+                    }
+                    
+                    .chat-inputs textarea[data-test-id="chat-input"] {
+                        flex: 1 !important;
+                        min-width: 0 !important;
+                        height: 40px !important;
+                        max-height: 40px !important;
+                        min-height: 40px !important;
+                        border-radius: 20px !important;
+                        padding: 10px 14px !important;
+                        font-size: 14px !important;
+                        resize: none !important;
+                        overflow: hidden !important;
+                        line-height: 20px !important;
+                        box-sizing: border-box !important;
+                    }
+                    
+                    .chat-inputs-controls {
+                        display: flex !important;
+                        flex-direction: row !important;
+                        align-items: center !important;
+                        gap: 4px !important;
+                        flex-shrink: 0 !important;
+                    }
+                    
+                    .chat-inputs-controls button {
+                        width: 40px !important;
+                        height: 40px !important;
+                        border-radius: 50% !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        margin: 0 !important;
+                        flex-shrink: 0 !important;
+                    }
+                    
+                    .enhanced-voice-button {
+                        background: #229ED9 !important;
+                        color: white !important;
+                        border: none !important;
+                    }
+                    
+                    .chat-input-send-button {
+                        background: #229ED9 !important;
+                        color: white !important;
+                        border: none !important;
+                    }
+                    
+                    .chat-input-send-button:disabled {
+                        background: #ccc !important;
+                    }
+
+                    /* Clean shadow DOM styling */
+                    .chat-message {
+                        display: flex !important;
+                        max-width: 80% !important;
+                        margin: 6px 0 !important;
+                        word-wrap: break-word !important;
+                    }
+                    
+                    .chat-message-from-user {
+                        align-self: flex-end !important;
+                        margin-left: auto !important;
+                        margin-right: 0 !important;
+                    }
+                    
+                    .chat-message-from-bot {
+                        align-self: flex-start !important;
+                        margin-left: 0 !important;
+                        margin-right: auto !important;
+                    }
+
+                    /* Our injected bubbles (when appended inside shadow) */
+                    .enhanced-user-message {
+                        background: #229ED9 !important;
+                        color: #fff !important;
+                        border-radius: 16px 16px 4px 16px !important;
+                        padding: 10px 14px !important;
+                        align-self: flex-end !important;
+                        margin: 6px 0 !important;
+                    }
+                    .enhanced-bot-message {
+                        background: #ffffff !important;
+                        color: #222 !important;
+                        border: 1px solid #e6eaef !important;
+                        border-radius: 16px 16px 16px 4px !important;
+                        padding: 10px 14px !important;
+                        align-self: flex-start !important;
+                        margin: 6px 0 !important;
                     }
                 `;
                 shadow.appendChild(s);
@@ -1131,15 +1558,15 @@ class EnhancedChatWrapper {
         chatMessages.appendChild(audioMessage);
         
         // Auto-play audio responses
-        setTimeout(() => {
-            const audioElement = document.getElementById(audioId);
-            if (audioElement) {
+            setTimeout(() => {
+                const audioElement = document.getElementById(audioId);
+                if (audioElement) {
                 audioElement.play().catch(e => {
                     console.warn('Auto-play failed (browser policy):', e);
                     this.showNotification('Audio ready - click play button', 'info', 3000);
                 });
-            }
-        }, 300);
+                }
+            }, 300);
         
         // Scroll to bottom
         chatMessages.scrollTop = chatMessages.scrollHeight;

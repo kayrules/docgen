@@ -198,45 +198,38 @@
     <div id="n8n-chat"></div>
 
     <script>
-      // Load CSS first and wait for it to load
-      const linkElement = document.createElement("link");
-      linkElement.rel = "stylesheet";
-      linkElement.href =
-        "https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css";
+      // Skip CDN CSS entirely - we'll handle styling in enhanced-script.js
+      console.log('Skipping CDN CSS to avoid problematic selectors');
+      
+      // Initialize chat directly without CDN CSS
+      const scriptElement = document.createElement("script");
+      scriptElement.type = "module";
+      scriptElement.textContent = `
+        import { createChat } from './enhanced-script.js';
 
-      linkElement.onload = function () {
-        // CSS loaded, now load and initialize chat
-        const scriptElement = document.createElement("script");
-        scriptElement.type = "module";
-        scriptElement.textContent = `
-          import { createChat } from './enhanced-script.js';
-
-          createChat({
-            target: '#n8n-chat',
-            // Production webhook:
-            webhookUrl: '/webhook-test/9416569c-169b-45cf-b768-60082dd61349',
-            // Test webhook (uncomment for testing):
-            // webhookUrl: '/webhook-test/9416569c-169b-45cf-b768-60082dd61349',
-            initialMessages: [
-              'Hi there! Welcome to RHB MARiA Dashboard 👋',
-              'I am Maria. How can I assist you today?'
-            ],
-            chatWindowConfig: {
-              welcomeMessage: 'Hi there! Welcome to RHB 👋',
-              getStarted: 'New Conversation',
-              expandButtonText: 'Click to chat',
-              closeButtonText: 'Close chat',
-            },
-            voiceEnabled: true,
-            textToSpeechEnabled: true,
-            autoPlayResponses: false,
-            alertModeEnabled: true
-          });
-        `;
-        document.body.appendChild(scriptElement);
-      };
-
-      document.head.appendChild(linkElement);
+        createChat({
+          target: '#n8n-chat',
+          // Production webhook:
+          webhookUrl: '/webhook-test/9416569c-169b-45cf-b768-60082dd61349',
+          // Test webhook (uncomment for testing):
+          // webhookUrl: '/webhook-test/9416569c-169b-45cf-b768-60082dd61349',
+          initialMessages: [
+            'Hi there! Welcome to RHB MARiA Dashboard 👋',
+            'I am Maria. How can I assist you today?'
+          ],
+          chatWindowConfig: {
+            welcomeMessage: 'Hi there! Welcome to RHB 👋',
+            getStarted: 'New Conversation',
+            expandButtonText: 'Click to chat',
+            closeButtonText: 'Close chat',
+          },
+          voiceEnabled: true,
+          textToSpeechEnabled: true,
+          autoPlayResponses: false,
+          alertModeEnabled: true
+        });
+      `;
+      document.body.appendChild(scriptElement);
     </script>
   </body>
 </html>
