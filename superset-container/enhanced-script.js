@@ -12,7 +12,7 @@ const ENHANCED_CONFIG = {
     textToSpeechEnabled: true,
     autoPlayResponses: true,
     alertModeEnabled: true,
-    webhookUrl: '/webhook/3157e7f7-34a4-4c1e-a9af-b0b0c077e2aa'
+    webhookUrl: '/webhook-test/9416569c-169b-45cf-b768-60082dd61349'
 };
 
 // Complete CSS replacing CDN to avoid problematic selectors
@@ -22,7 +22,7 @@ const ENHANCED_VOICE_STYLES = `
         font-family: Inter, Helvetica, Arial, sans-serif !important;
         position: fixed;
         bottom: 20px;
-        right: 20px;
+        right: 20px; /* Align to bottom-right */
         z-index: 9999;
     }
     
@@ -209,39 +209,35 @@ const ENHANCED_VOICE_STYLES = `
         font-family: Inter, Helvetica, Arial, sans-serif !important;
     }
     
-    /* Voice message styling - same as text */
-    .enhanced-voice-message {
+    /* User voice message styling */
+    #n8n-chat .chat-message-from-user .chat-message-markdown {
         background: #229ED9 !important;
         color: white !important;
         border-radius: 16px 16px 4px 16px !important;
         padding: 10px 14px !important;
-        margin: 6px 0 !important;
-        margin-left: auto !important;
-        margin-right: 0 !important;
-        max-width: 80% !important;
         align-self: flex-end !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 8px !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
     }
     
-    /* Audio response styling */
-    .enhanced-audio-message {
+    /* Audio controls within user messages */  
+    #n8n-chat .chat-message-from-user audio {
+        max-width: 120px !important;
+        height: 30px !important;
+    }
+    
+    /* Simplified audio response styling - always align left for bot responses */
+    #n8n-chat .chat-message-from-bot .chat-message-markdown {
         background: #ffffff !important;
         color: #222 !important;
         border: 1px solid #e6eaef !important;
         border-radius: 16px 16px 16px 4px !important;
         padding: 10px 14px !important;
-        margin: 6px 0 !important;
-        margin-left: 0 !important;
-        margin-right: auto !important;
-        max-width: 80% !important;
         align-self: flex-start !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 8px !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+    }
+    
+    /* Audio controls within bot messages */
+    #n8n-chat .chat-message-from-bot audio {
+        max-width: 140px !important;
+        height: 30px !important;
     }
     
     /* Hide TTS buttons - not needed in Telegram style */
@@ -358,41 +354,9 @@ const ENHANCED_VOICE_STYLES = `
         50% { opacity: 0.7; }
     }
 
-    /* Voice message styling */
-    .enhanced-voice-message {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: rgba(40, 167, 69, 0.1);
-        border-radius: 12px;
-        margin: 4px 0;
-    }
-
+    /* Hide TTS play buttons - not needed with native audio controls */
     .enhanced-play-button {
-        background: #28a745;
-        border: none;
-        color: white;
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        transition: all 0.2s ease;
-    }
-
-    .enhanced-play-button:hover {
-        background: #218838;
-        transform: scale(1.05);
-    }
-
-    .enhanced-audio-player {
-        flex: 1;
-        height: 32px;
-        max-width: 200px;
+        display: none !important;
     }
 
     /* Input area enhancements */
@@ -553,8 +517,16 @@ class EnhancedChatWrapper {
         // Add notification system
         this.addNotificationSystem();
         
+        // Fix chat toggle functionality with delay
+        setTimeout(() => {
+            this.fixChatToggle(chatContainer);
+        }, 500);
+        
         // Try to inject ordering styles into the widget's shadow root (if any)
         this.injectOrderingStylesIntoShadowRootWithRetry();
+        
+        // Start periodic cleanup of status messages
+        this.startPeriodicCleanup();
         
         console.log('Enhanced chat with voice features initialized');
     }
@@ -693,15 +665,37 @@ class EnhancedChatWrapper {
                             continue;
                         }
                         
-                        // No need to check for transparent classes since we're not using CDN CSS
-                        
                         // Skip our own enhanced UI elements and controls
                         if (
-                            node.matches('.enhanced-voice-message, .enhanced-play-button, .enhanced-notification, .enhanced-voice-button, .enhanced-input-container, button, audio')
+                            node.matches('.enhanced-voice-message, .enhanced-play-button, .enhanced-notification, .enhanced-voice-button, .enhanced-input-container, button, audio') ||
+                            node.classList.contains('chat-message') // Skip our own messages
                         ) {
                             continue;
                         }
-                            this.enhanceMessage(node);
+                        
+                        // Remove original n8n messages, status messages, and generic error messages
+                        if (node.classList && node.classList.contains('chat-message')) {
+                            const hasEmptyComments = node.innerHTML.includes('<!---->') && 
+                                                   !node.classList.contains('enhanced-bot') &&
+                                                   !node.classList.contains('enhanced-user');
+                            
+                            // Check for unwanted messages
+                            const isStatusMessage = content.includes('"handled": true') ||
+                                                   content.includes('"status": "processed"') ||
+                                                   content.includes('handled') && content.includes('processed');
+                                                   
+                            const isGenericError = content.includes('Error: Failed to receive response') ||
+                                                  content.includes('Failed to receive response');
+                            
+                            if (hasEmptyComments || isStatusMessage || isGenericError) {
+                                // Remove unwanted n8n messages
+                                console.log('Removing unwanted n8n message:', content.substring(0, 50));
+                                node.remove();
+                                continue;
+                            }
+                        }
+                        
+                        this.enhanceMessage(node);
                         }
                 }
                 
@@ -733,6 +727,12 @@ class EnhancedChatWrapper {
             
             if (isWebhookRequest) {
                 console.log('Intercepting chat request to:', url, 'Method:', options.method);
+                
+                // Prevent n8n from adding its own message by immediately clearing any pending UI updates
+                setTimeout(() => {
+                    this.cleanupDuplicateMessages();
+                }, 100);
+                
                 return this.handleChatRequest(url, options);
             }
             // For all other requests, use original fetch
@@ -821,6 +821,12 @@ class EnhancedChatWrapper {
         try {
             console.log('Sending text message:', message);
             
+            // Add user message to chat immediately for proper ordering
+            this.addUserMessage(message, 'text');
+            
+            // Show typing indicator for bot response
+            const typingIndicator = this.addTypingIndicator();
+            
             // Create FormData for text message with your specified format
             const formData = new FormData();
             
@@ -836,66 +842,77 @@ class EnhancedChatWrapper {
 
             formData.append('message', JSON.stringify(messageData));
 
-            // Use original fetch to avoid interception
-            const response = await this.originalFetch(this.options.webhookUrl, {
-                method: 'POST',
-                body: formData
-            });
+            try {
+                // Use original fetch to avoid interception
+                const response = await this.originalFetch(this.options.webhookUrl, {
+                    method: 'POST',
+                    body: formData
+                });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                // Remove typing indicator
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Handle the response ourselves and add bot message immediately after user message
+                await this.handleResponse(response.clone());
+                
+            } catch (error) {
+                // Remove typing indicator on error
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+                
+                // Only show meaningful error messages
+                if (error.message && error.message !== 'Failed to send message') {
+                    this.addBotMessage(`Error: ${error.message}`, 'text');
+                }
             }
-
-            // Handle the response ourselves and return a 204 to prevent n8n from displaying anything
-            await this.handleResponse(response.clone());
             
-            // Return No Content so the original chat does not attempt to render a response bubble
-            return new Response(null, { status: 204 });
+            // Clean up any duplicates that might have been added
+            setTimeout(() => {
+                this.cleanupDuplicateMessages();
+            }, 100);
+            
+            // Return empty success response to prevent n8n from processing anything
+            return new Response('', {
+                status: 204,
+                headers: {
+                    'Content-Type': 'text/plain'
+                }
+            });
             
         } catch (error) {
             console.error('Error sending text message:', error);
+            // Don't add generic error message to chat
             this.showNotification(`Message failed: ${error.message}`, 'error');
             throw error;
         }
     }
 
-    addUserMessageToChat(message) {
-        const chatMessages = this.getChatMessagesContainer();
-        if (!chatMessages) return;
-
-        const userMessage = document.createElement('div');
-        userMessage.className = 'enhanced-user-message';
-        userMessage.setAttribute('data-timestamp', Date.now());
-        
-        userMessage.innerHTML = `
-            <div style="line-height: 1.4;">${message}</div>
-        `;
-        
-        chatMessages.appendChild(userMessage);
-        this.scrollToBottom(chatMessages);
-    }
 
     enhanceMessage(messageElement) {
         if (!(messageElement instanceof HTMLElement)) return;
+        
         // Guard against enhancing our own controls or non-text elements
         if (
-            messageElement.matches('.enhanced-voice-message, .enhanced-play-button, .enhanced-notification, .enhanced-voice-button, .enhanced-input-container, button, audio')
+            messageElement.matches('.enhanced-voice-message, .enhanced-play-button, .enhanced-notification, .enhanced-voice-button, .enhanced-input-container, button, audio, .chat-message')
         ) {
             return;
         }
+        
         // Only enhance likely message containers
         const text = (messageElement.textContent || '').trim();
         if (text.length < 2) return; // avoid enhancing tiny/emoji-only nodes
         if (messageElement.querySelector('.enhanced-play-button')) return;
 
-        // Add TTS button to message elements
-            const playBtn = document.createElement('button');
-            playBtn.className = 'enhanced-play-button';
-            playBtn.innerHTML = '🔊';
-            playBtn.title = 'Play message';
-        playBtn.onclick = () => this.playTextAsVoice(text);
-            
-            messageElement.appendChild(playBtn);
+        // Since we're hiding TTS buttons, we don't need to add them
+        // Just log that we would enhance this message
+        console.log('Would enhance message (TTS hidden):', text.substring(0, 50));
     }
 
     addNotificationSystem() {
@@ -907,6 +924,49 @@ class EnhancedChatWrapper {
             <div class="enhanced-notification-content"></div>
         `;
         document.body.appendChild(notification);
+    }
+
+    fixChatToggle(chatContainer) {
+        // Find the toggle button and chat window
+        const toggleButton = chatContainer.querySelector('.chat-window-toggle');
+        const chatWindow = chatContainer.querySelector('.chat-window');
+        
+        if (!toggleButton || !chatWindow) {
+            console.warn('Chat toggle elements not found');
+            return;
+        }
+
+        console.log('Setting up chat toggle functionality');
+        
+        // Remove any existing click listeners by cloning the element
+        const newToggleButton = toggleButton.cloneNode(true);
+        toggleButton.parentNode.replaceChild(newToggleButton, toggleButton);
+        
+        // Add our own click handler
+        newToggleButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('Chat toggle clicked');
+            
+            // Toggle chat window visibility
+            const isHidden = chatWindow.hidden || chatWindow.style.display === 'none' || !chatWindow.style.display;
+            if (isHidden) {
+                chatWindow.style.display = 'flex';
+                chatWindow.hidden = false;
+                console.log('Chat window opened');
+            } else {
+                chatWindow.style.display = 'none';
+                chatWindow.hidden = true;
+                console.log('Chat window closed');
+            }
+        });
+
+        // Ensure chat window starts hidden
+        chatWindow.style.display = 'none';
+        chatWindow.hidden = true;
+        
+        console.log('Chat toggle functionality fixed');
     }
 
     async toggleVoiceRecording() {
@@ -1043,42 +1103,64 @@ class EnhancedChatWrapper {
         try {
             console.log('Sending voice message, size:', audioBlob.size);
             
-            // Add voice message to chat
-            this.addVoiceMessageToChat('🎤 Voice message sent', audioBlob);
+            // Add user voice message to chat immediately for proper ordering
+            this.addUserMessage(audioBlob, 'voice');
             
-            // Send to webhook with proper format
-            const formData = new FormData();
-            formData.append('audio', audioBlob, 'voice-message.wav');
+            // Show typing indicator for bot response
+            const typingIndicator = this.addTypingIndicator();
             
-            const messageData = { voice: true };
-            // Add alertMode flag if in alert mode
-            if (this.isAlertMode) {
-                messageData.alertMode = true;
+            try {
+                // Send to webhook with proper format
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'voice-message.wav');
+
+                const messageData = { voice: true };
+                // Add alertMode flag if in alert mode
+                if (this.isAlertMode) {
+                    messageData.alertMode = true;
+                }
+
+                formData.append('message', JSON.stringify(messageData));
+
+                // Use original fetch to avoid interception
+                const response = await this.originalFetch(this.options.webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'audio/mpeg, audio/*;q=0.9, application/json;q=0.8, */*;q=0.5'
+                    },
+                    body: formData
+                });
+
+                // Remove typing indicator
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Handle the response ourselves and add bot message immediately after user message
+                await this.handleResponse(response.clone());
+                
+                this.showNotification('Voice message sent successfully!', 'success', 2000);
+                
+            } catch (error) {
+                // Remove typing indicator on error
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+                
+                // Only show meaningful error messages
+                if (error.message && error.message !== 'Failed to send voice message') {
+                    this.addBotMessage(`Error: ${error.message}`, 'text');
+                }
+                throw error;
             }
-            
-            formData.append('message', JSON.stringify(messageData));
-
-            // Use original fetch to avoid interception
-            const response = await this.originalFetch(this.options.webhookUrl, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'audio/mpeg, audio/*;q=0.9, application/json;q=0.8, */*;q=0.5'
-                },
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            // Handle the response ourselves to control display
-            await this.handleResponse(response.clone());
-            
-            // Voice messages don't need to return anything to the original chat
-            this.showNotification('Voice message sent successfully!', 'success', 2000);
             
         } catch (error) {
             console.error('Error sending voice message:', error);
+            // Don't add generic error message to chat
             this.showNotification(`Voice message failed: ${error.message}`, 'error');
         }
     }
@@ -1102,7 +1184,7 @@ class EnhancedChatWrapper {
         if (audioBlob.size > 0) {
             console.log('Received audio blob, size:', audioBlob.size);
             const audioUrl = URL.createObjectURL(audioBlob);
-            this.addAudioMessageToChat('🔊 Audio response', audioUrl);
+            this.addBotMessage(audioUrl, 'audio');
             this.showNotification('Voice response received!', 'success', 3000);
         } else {
             throw new Error('Received empty audio response');
@@ -1113,32 +1195,37 @@ class EnhancedChatWrapper {
         const responseText = await response.text();
         
         if (!responseText.trim()) {
-            throw new Error('Empty response from server');
+            console.warn('Empty response from server - adding error message');
+            this.addBotMessage('Error: Failed to receive response', 'text');
+            return;
         }
 
         let data;
         try {
             data = JSON.parse(responseText);
         } catch (jsonError) {
-            throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
+            console.error('Invalid JSON response:', responseText.substring(0, 100));
+            this.addBotMessage(`Error: Invalid response format`, 'text');
+            return;
         }
 
         console.log('Parsed response data:', data);
 
-        // Always clean up empty responses first
-        this.removeEmptyPlaceholders();
-
         // Handle text responses
         if (data.text && data.text.trim()) {
             console.log('Adding text message to chat:', data.text);
-            this.addBotMessageToNativeContainer(data.text);
+            this.addBotMessage(data.text, 'text');
             this.showNotification('Response received!', 'success', 2000);
         }
-
         // Handle voice responses
-        if (data.voice && data.voiceUrl) {
-            this.addAudioMessageToChat('🔊 Voice response', data.voiceUrl);
+        else if (data.voice && data.voiceUrl) {
+            this.addBotMessage(data.voiceUrl, 'audio');
             this.showNotification('Voice response received!', 'success', 3000);
+        }
+        // If no text or voice, show what we got
+        else {
+            console.warn('No text or voice response found in data:', data);
+            this.addBotMessage('Error: No response content received', 'text');
         }
     }
 
@@ -1223,83 +1310,200 @@ class EnhancedChatWrapper {
         }
     }
 
-    addBotMessageToNativeContainer(text) {
-        const messagesContainer = document.querySelector('#n8n-chat .chat-messages-list');
-        if (!messagesContainer) {
-            console.warn('Could not find native messages container');
-            return;
-        }
+    // Simplified single messages container
+    getMessagesContainer() {
+        return document.querySelector('#n8n-chat .chat-messages-list');
+    }
+    
+    cleanupDuplicateMessages() {
+        const container = this.getMessagesContainer();
+        if (!container) return;
+        
+        const allMessages = Array.from(container.querySelectorAll('.chat-message'));
+        const messagesToRemove = [];
+        
+        allMessages.forEach(message => {
+            const content = message.textContent.trim();
+            const hasComments = message.innerHTML.includes('<!---->') && !message.innerHTML.includes('enhanced');
+            
+            // Remove status messages
+            const isStatusMessage = content.includes('"handled": true') ||
+                                   content.includes('"status": "processed"') ||
+                                   (content.includes('handled') && content.includes('processed')) ||
+                                   content.includes('{ "handled": true, "status": "processed" }');
+            
+            // Remove generic error messages from original n8n
+            const isGenericError = content.includes('Error: Failed to receive response') ||
+                                 content.includes('Failed to receive response');
+            
+            if (isStatusMessage || (hasComments && isGenericError)) {
+                console.log('Removing unwanted message:', content.substring(0, 50));
+                messagesToRemove.push(message);
+                return;
+            }
+            
+            // Remove original n8n messages that have duplicates
+            if (hasComments) {
+                const enhancedMessages = allMessages.filter(m => 
+                    m !== message && 
+                    (m.classList.contains('enhanced-user') || m.classList.contains('enhanced-bot')) &&
+                    m.textContent.trim() === content
+                );
+                
+                if (enhancedMessages.length > 0) {
+                    console.log('Removing duplicate original message:', content.substring(0, 50));
+                    messagesToRemove.push(message);
+                }
+            }
+        });
+        
+        // Remove all unwanted messages
+        messagesToRemove.forEach(msg => msg.remove());
+    }
+    
+    startPeriodicCleanup() {
+        // Clean up status messages every 500ms
+        setInterval(() => {
+            this.removeStatusMessages();
+        }, 500);
+    }
+    
+    removeStatusMessages() {
+        const container = this.getMessagesContainer();
+        if (!container) return;
+        
+        const allMessages = container.querySelectorAll('.chat-message');
+        allMessages.forEach(message => {
+            const content = message.textContent.trim();
+            const hasComments = message.innerHTML.includes('<!---->') && !message.innerHTML.includes('enhanced');
+            
+            // Check for various unwanted message types
+            const isStatusMessage = content.includes('"handled": true') ||
+                                   content.includes('"status": "processed"') ||
+                                   (content.includes('handled') && content.includes('processed')) ||
+                                   content.includes('{ "handled": true, "status": "processed" }') ||
+                                   content === '{"handled": true,"status": "processed"}' ||
+                                   content === '{ "handled": true, "status": "processed" }';
+                                   
+            const isGenericError = content.includes('Error: Failed to receive response') ||
+                                 content.includes('Failed to receive response');
+            
+            // Remove unwanted messages from original n8n system
+            if ((hasComments && (isStatusMessage || isGenericError)) || isStatusMessage) {
+                console.log('Periodic cleanup: Removing unwanted message:', content.substring(0, 50));
+                message.remove();
+            }
+        });
+    }
 
-        // Create a message using the native structure
+    // Single unified method to add user messages
+    addUserMessage(content, type) {
+        const container = this.getMessagesContainer();
+        if (!container) return;
+
         const messageDiv = document.createElement('div');
-        messageDiv.className = 'chat-message chat-message-from-bot enhanced-native-bot';
-        messageDiv.innerHTML = `
+        messageDiv.className = 'chat-message chat-message-from-user enhanced-user';
+        messageDiv.setAttribute('data-timestamp', Date.now());
+        
+        if (type === 'text') {
+            messageDiv.innerHTML = `
+                <div class="chat-message-markdown">
+                    <p>${content}</p>
+                </div>
+            `;
+        } else if (type === 'voice') {
+            const audioUrl = URL.createObjectURL(content);
+            const audioId = `user-audio-${Date.now()}`;
+            
+            messageDiv.innerHTML = `
+                <div class="chat-message-markdown" style="
+                    display: flex !important;
+                    align-items: center !important;
+                    gap: 8px !important;
+                ">
+                    <span>🎤 Voice message</span>
+                    <audio id="${audioId}" controls preload="metadata" style="max-width: 120px; height: 30px;">
+                        <source src="${audioUrl}" type="${content.type}">
+                    </audio>
+                    <small style="opacity: 0.8; font-size: 11px;">${(content.size / 1024).toFixed(1)}KB</small>
+                </div>
+            `;
+        }
+        
+        container.appendChild(messageDiv);
+        this.scrollToBottom(container);
+    }
+
+    // Single unified method to add bot messages  
+    addBotMessage(content, type) {
+        const container = this.getMessagesContainer();
+        if (!container) return;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message chat-message-from-bot enhanced-bot';
+        messageDiv.setAttribute('data-timestamp', Date.now());
+        
+        if (type === 'text') {
+            messageDiv.innerHTML = `
+                <div class="chat-message-actions"></div>
+                <div class="chat-message-markdown">
+                    <p>${content}</p>
+                </div>
+            `;
+        } else if (type === 'audio') {
+            const audioId = `bot-audio-${Date.now()}`;
+            
+            messageDiv.innerHTML = `
+                <div class="chat-message-actions"></div>
+                <div class="chat-message-markdown" style="
+                    display: flex !important;
+                    align-items: center !important;
+                    gap: 8px !important;
+                ">
+                    <span>🔊 Audio response</span>
+                    <audio id="${audioId}" controls preload="metadata" style="max-width: 140px; height: 30px;">
+                        <source src="${content}" type="audio/mpeg">
+                        <source src="${content}" type="audio/wav">
+                    </audio>
+                </div>
+            `;
+            
+            // Auto-play audio responses
+            setTimeout(() => {
+                const audioElement = document.getElementById(audioId);
+                if (audioElement) {
+                    audioElement.play().catch(e => {
+                        console.warn('Auto-play failed (browser policy):', e);
+                        this.showNotification('Audio ready - click play button', 'info', 3000);
+                    });
+                }
+            }, 300);
+        }
+        
+        container.appendChild(messageDiv);
+        this.scrollToBottom(container);
+    }
+    
+    addTypingIndicator() {
+        const container = this.getMessagesContainer();
+        if (!container) return null;
+        
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'chat-message chat-message-from-bot typing-indicator';
+        typingDiv.innerHTML = `
             <div class="chat-message-actions"></div>
             <div class="chat-message-markdown">
-                <p>${text}</p>
+                <p>Typing...</p>
             </div>
         `;
         
-        messagesContainer.appendChild(messageDiv);
-        this.scrollToBottom(messagesContainer);
-    }
-
-    addTextMessageToChat(text) {
-        const chatMessages = this.getChatMessagesContainer();
-        if (!chatMessages) return;
-
-        const textMessage = document.createElement('div');
-        textMessage.className = 'enhanced-bot-message';
-        textMessage.setAttribute('data-timestamp', Date.now());
+        container.appendChild(typingDiv);
+        this.scrollToBottom(container);
         
-        textMessage.innerHTML = `
-            <div style="color: #333; line-height: 1.4;">🤖 ${text}</div>
-        `;
-        
-        chatMessages.appendChild(textMessage);
-        this.scrollToBottom(chatMessages);
+        return typingDiv;
     }
 
-    getChatMessagesContainer() {
-        // 1) Prefer the widget shadow root if present
-        const shadow = this.getWidgetShadowRoot();
-        if (shadow) {
-            const shadowSelectors = [
-                '[class*="messages"]',
-                '[class*="message-list"]',
-                '[data-testid*="messages"]',
-                '[role="log"]',
-                'main',
-                'section'
-            ];
-            for (const sel of shadowSelectors) {
-                const node = shadow.querySelector(sel);
-                if (node) {
-                    console.log('Using shadow messages container:', sel);
-                    return node;
-                }
-            }
-        }
 
-        // 2) Fallback to light DOM containers
-        const selectors = [
-            '#n8n-chat [class*="message"]',
-            '#n8n-chat [class*="chat"]',
-            '#n8n-chat [class*="conversation"]',
-            '#n8n-chat [class*="body"]',
-            '#n8n-chat div[style*="flex-direction"]',
-            '#n8n-chat div[style*="display: flex"]'
-        ];
-        for (const selector of selectors) {
-            const container = document.querySelector(selector);
-            if (container) {
-                console.log('Using light DOM messages container:', selector);
-                return container;
-            }
-        }
-        console.warn('Could not find chat messages container');
-        return null;
-    }
 
     scrollToBottom(container) {
         if (!container) return;
@@ -1462,115 +1666,7 @@ class EnhancedChatWrapper {
         }
     }
 
-    addVoiceMessageToChat(text, audioBlob) {
-        const chatMessages = this.getChatMessagesContainer();
-        if (!chatMessages) return;
 
-        const voiceMessage = document.createElement('div');
-        voiceMessage.className = 'enhanced-voice-message enhanced-user-message';
-        voiceMessage.setAttribute('data-timestamp', Date.now());
-        voiceMessage.style.cssText = `
-            background: rgba(23, 162, 184, 0.1) !important;
-            border-radius: 12px !important;
-            padding: 12px !important;
-            margin: 8px 0 !important;
-            display: flex !important;
-            align-items: center !important;
-            gap: 8px !important;
-            border-left: 4px solid #17a2b8 !important;
-            margin-left: 10% !important;
-            align-self: flex-end !important;
-        `;
-        
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audioId = `user-audio-${Date.now()}`;
-        
-        voiceMessage.innerHTML = `
-            <span style="color: #333; font-family: Inter, Helvetica, Arial, sans-serif;">${text}</span>
-            <button class="enhanced-play-button" onclick="document.getElementById('${audioId}').play()" title="Play back your voice message" style="
-                background: #17a2b8;
-                border: none;
-                color: white;
-                border-radius: 50%;
-                width: 32px;
-                height: 32px;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 12px;
-            ">
-                ▶
-            </button>
-            <audio id="${audioId}" controls preload="metadata" style="max-width: 150px;">
-                <source src="${audioUrl}" type="${audioBlob.type}">
-            </audio>
-            <small style="color: #666; font-size: 11px;">Size: ${(audioBlob.size / 1024).toFixed(1)}KB</small>
-        `;
-        
-        chatMessages.appendChild(voiceMessage);
-        this.scrollToBottom(chatMessages);
-    }
-
-    addAudioMessageToChat(text, audioUrl) {
-        const chatMessages = document.querySelector('#n8n-chat [class*="message"]') ||
-                           document.querySelector('#n8n-chat [class*="chat"]');
-        
-        if (!chatMessages) return;
-
-        const audioMessage = document.createElement('div');
-        audioMessage.className = 'enhanced-voice-message';
-        audioMessage.style.cssText = `
-            background: rgba(40, 167, 69, 0.1);
-            border-radius: 12px;
-            padding: 12px;
-            margin: 8px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        `;
-        
-        const audioId = `bot-audio-${Date.now()}`;
-        
-        audioMessage.innerHTML = `
-            <button class="enhanced-play-button" onclick="document.getElementById('${audioId}').play()" style="
-                background: #28a745;
-                border: none;
-                color: white;
-                border-radius: 50%;
-                width: 32px;
-                height: 32px;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 12px;
-            ">
-                ▶
-            </button>
-            <audio id="${audioId}" class="enhanced-audio-player" controls preload="metadata" style="flex: 1; max-width: 200px;">
-                <source src="${audioUrl}" type="audio/mpeg">
-                <source src="${audioUrl}" type="audio/wav">
-            </audio>
-            <span style="color: #333; font-family: Inter, Helvetica, Arial, sans-serif;">${text}</span>
-        `;
-        
-        chatMessages.appendChild(audioMessage);
-        
-        // Auto-play audio responses
-            setTimeout(() => {
-                const audioElement = document.getElementById(audioId);
-                if (audioElement) {
-                audioElement.play().catch(e => {
-                    console.warn('Auto-play failed (browser policy):', e);
-                    this.showNotification('Audio ready - click play button', 'info', 3000);
-                });
-                }
-            }, 300);
-        
-        // Scroll to bottom
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
 
     playTextAsVoice(text) {
         if (!this.options.textToSpeechEnabled) {
