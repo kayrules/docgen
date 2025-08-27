@@ -891,18 +891,17 @@ class EnhancedChatWrapper {
                 this.cleanupDuplicateMessages();
             }, 100);
             
-            // Return empty success response to prevent n8n from processing anything
-            return new Response('', {
-                status: 204,
-                headers: {
-                    'Content-Type': 'text/plain'
-                }
+            // Return proper empty success response to prevent n8n from processing anything
+            return new Response(null, {
+                status: 204
             });
             
         } catch (error) {
             console.error('Error sending text message:', error);
-            // Don't add generic error message to chat
-            this.showNotification(`Message failed: ${error.message}`, 'error');
+            // Only show meaningful error messages in notifications
+            if (!error.message.includes('Failed to construct') && !error.message.includes('Response with null body')) {
+                this.showNotification(`Message failed: ${error.message}`, 'error');
+            }
             throw error;
         }
     }
@@ -1224,8 +1223,10 @@ class EnhancedChatWrapper {
             
         } catch (error) {
             console.error('Error sending voice message:', error);
-            // Don't add generic error message to chat
-            this.showNotification(`Voice message failed: ${error.message}`, 'error');
+            // Only show meaningful error messages in notifications
+            if (!error.message.includes('Failed to construct') && !error.message.includes('Response with null body')) {
+                this.showNotification(`Voice message failed: ${error.message}`, 'error');
+            }
         }
     }
 
