@@ -505,6 +505,10 @@ class EnhancedChatWrapper {
             return;
         }
 
+        // Debug: Log what we found
+        console.log('Found chat container:', chatContainer);
+        console.log('Chat container children:', Array.from(chatContainer.children).map(c => c.className));
+        
         // Add voice controls to the chat
         this.addVoiceControls(chatContainer);
         
@@ -927,12 +931,50 @@ class EnhancedChatWrapper {
     }
 
     fixChatToggle(chatContainer) {
-        // Find the toggle button and chat window
-        const toggleButton = chatContainer.querySelector('.chat-window-toggle');
-        const chatWindow = chatContainer.querySelector('.chat-window');
+        // Debug: Log the chat container structure
+        console.log('Chat container:', chatContainer);
+        console.log('Chat container HTML:', chatContainer?.outerHTML?.substring(0, 500));
         
-        if (!toggleButton || !chatWindow) {
-            console.warn('Chat toggle elements not found');
+        // Try multiple selectors for toggle button
+        let toggleButton = chatContainer?.querySelector('.chat-window-toggle') ||
+                          document.querySelector('.chat-window-toggle') ||
+                          chatContainer?.querySelector('[class*="toggle"]') ||
+                          document.querySelector('[class*="toggle"]');
+        
+        // Try multiple selectors for chat window
+        let chatWindow = chatContainer?.querySelector('.chat-window') ||
+                        document.querySelector('.chat-window') ||
+                        chatContainer?.querySelector('[class*="window"]') ||
+                        document.querySelector('[class*="window"]');
+        
+        console.log('Toggle button found:', toggleButton);
+        console.log('Chat window found:', chatWindow);
+        
+        if (!toggleButton) {
+            console.warn('Toggle button not found, searching more broadly');
+            // Search for any button or clickable element
+            toggleButton = chatContainer?.querySelector('button') ||
+                          chatContainer?.querySelector('[role="button"]') ||
+                          chatContainer?.querySelector('div[style*="cursor"]');
+            console.log('Alternative toggle button:', toggleButton);
+        }
+        
+        if (!chatWindow) {
+            console.warn('Chat window not found, using container as fallback');
+            // Use any div that might be the main chat interface
+            chatWindow = chatContainer?.querySelector('div[style*="flex"]') ||
+                        chatContainer?.querySelector('div[class*="chat"]') ||
+                        chatContainer;
+            console.log('Alternative chat window:', chatWindow);
+        }
+        
+        if (!toggleButton) {
+            console.error('No toggle button found at all');
+            return;
+        }
+        
+        if (!chatWindow) {
+            console.error('No chat window found at all');
             return;
         }
 
@@ -947,16 +989,29 @@ class EnhancedChatWrapper {
             e.preventDefault();
             e.stopPropagation();
             
-            console.log('Chat toggle clicked');
+            console.log('Chat toggle clicked!');
+            console.log('Current window state - hidden:', chatWindow.hidden, 'display:', chatWindow.style.display);
             
             // Toggle chat window visibility
-            const isHidden = chatWindow.hidden || chatWindow.style.display === 'none' || !chatWindow.style.display;
-            if (isHidden) {
+            const isCurrentlyHidden = chatWindow.hidden || 
+                                     chatWindow.style.display === 'none' || 
+                                     chatWindow.style.display === '' ||
+                                     !chatWindow.offsetParent;
+            
+            console.log('Is currently hidden:', isCurrentlyHidden);
+            
+            if (isCurrentlyHidden) {
+                // Show the chat window
                 chatWindow.style.display = 'flex';
+                chatWindow.style.visibility = 'visible';
+                chatWindow.style.opacity = '1';
                 chatWindow.hidden = false;
                 console.log('Chat window opened');
             } else {
+                // Hide the chat window
                 chatWindow.style.display = 'none';
+                chatWindow.style.visibility = 'hidden';
+                chatWindow.style.opacity = '0';
                 chatWindow.hidden = true;
                 console.log('Chat window closed');
             }
