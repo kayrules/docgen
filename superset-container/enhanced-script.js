@@ -571,7 +571,7 @@ const ENHANCED_VOICE_STYLES = `
     }
 
     .enhanced-voice-typing::before {
-        content: "🎤";
+        content: "🎤︎︎";
         animation: spin 2s linear infinite;
     }
 
@@ -853,7 +853,7 @@ class EnhancedChatWrapper {
       voiceBtn.id = "enhanced-voice-btn";
       // Use class that matches minimal CSS in index.html
       voiceBtn.className = "enhanced-voice-button";
-      voiceBtn.innerHTML = "🎤";
+      voiceBtn.innerHTML = "🎤︎︎";
       voiceBtn.title = "Record voice message";
       voiceBtn.type = "button"; // Prevent form submission
 
@@ -880,7 +880,7 @@ class EnhancedChatWrapper {
     voiceControls.className = "enhanced-voice-controls";
     voiceControls.innerHTML = `
             <button class="enhanced-voice-button" id="enhanced-voice-btn" title="Record voice message">
-                🎤
+                🎤︎︎
             </button>
         `;
 
@@ -904,8 +904,8 @@ class EnhancedChatWrapper {
     const alertModeBtn = document.createElement("a");
     alertModeBtn.className = "enhanced-alert-mode-link";
     alertModeBtn.id = "enhanced-alert-mode-btn";
-    alertModeBtn.textContent = "🚨 Alert Mode: OFF";
-    alertModeBtn.title = "Toggle Alert Mode (Voice Only)";
+    alertModeBtn.textContent = "🚨 Voice Mode: OFF";
+    alertModeBtn.title = "Toggle Voice Mode";
     alertModeBtn.href = "#";
     alertModeBtn.style.textDecoration = "none";
 
@@ -1498,7 +1498,7 @@ class EnhancedChatWrapper {
       const voiceBtn = document.querySelector("#enhanced-voice-btn");
       if (voiceBtn) {
         voiceBtn.classList.remove("recording");
-        voiceBtn.innerHTML = "🎤";
+        voiceBtn.innerHTML = "🎤︎︎";
       }
 
       this.showNotification("Processing voice message...", "info");
@@ -1871,7 +1871,7 @@ class EnhancedChatWrapper {
                     align-items: center !important;
                     gap: 8px !important;
                 ">
-                    <span>🎤 Voice message</span>
+                    <span>�️︎︎ Voice message</span>
                     <audio id="${audioId}" controls preload="metadata" style="max-width: 120px; height: 30px;">
                         <source src="${audioUrl}" type="${content.type}">
                     </audio>
@@ -2167,20 +2167,20 @@ class EnhancedChatWrapper {
     );
 
     if (this.isAlertMode) {
-      alertBtn.textContent = "🚨 Alert Mode: ON";
+      alertBtn.textContent = "🚨 Voice Mode: ON";
       alertBtn.classList.add("active");
       inputContainer?.classList.add("alert-mode");
       if (textInput) {
-        textInput.placeholder = "Alert mode: Voice only";
+        textInput.placeholder = "Voice only";
         textInput.disabled = true;
       }
       this.showNotification(
-        "Alert Mode enabled! Only voice messages allowed.",
+        "Voice Mode enabled! Only voice messages allowed.",
         "warning",
         3000
       );
     } else {
-      alertBtn.textContent = "🚨 Alert Mode: OFF";
+      alertBtn.textContent = "🚨 Voice Mode: OFF";
       alertBtn.classList.remove("active");
       inputContainer?.classList.remove("alert-mode");
       if (textInput) {
@@ -2188,7 +2188,7 @@ class EnhancedChatWrapper {
         textInput.disabled = false;
       }
       this.showNotification(
-        "Alert Mode disabled. Text and voice messages enabled.",
+        "Voice Mode disabled. Text and voice messages enabled.",
         "info",
         3000
       );
